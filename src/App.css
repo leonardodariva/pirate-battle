@@ -1,0 +1,171 @@
+#root {
+  min-height: 100%;
+}
+
+.menu-screen,
+.game-screen {
+  min-height: 100svh;
+  width: min(100%, 1280px);
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 2.5rem);
+}
+
+.menu-screen {
+  display: grid;
+  place-items: center;
+}
+
+.menu-card {
+  width: min(100%, 34rem);
+  padding: clamp(2rem, 8vw, 4rem);
+  border: 1px solid rgba(128, 216, 229, 0.25);
+  border-radius: 1.5rem;
+  background: rgba(3, 25, 38, 0.88);
+  box-shadow: 0 1.5rem 5rem rgba(0, 0, 0, 0.35);
+  text-align: center;
+}
+
+.eyebrow {
+  margin: 0 0 0.5rem;
+  color: #80d8e5;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  color: #f5fbfc;
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  line-height: 0.95;
+  letter-spacing: -0.05em;
+}
+
+.menu-copy {
+  margin: 1.5rem auto 2rem;
+  max-width: 28rem;
+  color: #b7ccd1;
+  line-height: 1.6;
+}
+
+button {
+  min-height: 2.75rem;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+button:focus-visible {
+  outline: 3px solid #f6d365;
+  outline-offset: 3px;
+}
+
+.primary-button {
+  min-width: 10rem;
+  border: 0;
+  background: #f6d365;
+  color: #13232b;
+}
+
+.primary-button:hover {
+  background: #ffe694;
+}
+
+.game-screen {
+  display: grid;
+  grid-template-rows: auto minmax(20rem, 1fr) auto;
+  gap: 1rem;
+}
+
+.game-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.game-header h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+}
+
+.secondary-button {
+  border: 1px solid rgba(183, 204, 209, 0.5);
+  background: transparent;
+  color: #eaf5f7;
+}
+
+.secondary-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.arena-panel {
+  min-height: 20rem;
+  overflow: hidden;
+  border: 1px solid rgba(128, 216, 229, 0.35);
+  border-radius: 1rem;
+  background: #0a6480;
+  box-shadow: 0 1.25rem 4rem rgba(0, 0, 0, 0.3);
+}
+
+.game-canvas-shell,
+.game-canvas {
+  width: 100%;
+  height: 100%;
+  min-height: 20rem;
+}
+
+.game-canvas-shell {
+  position: relative;
+}
+
+.game-canvas canvas {
+  display: block;
+}
+
+.asset-status {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 1rem;
+  background: rgba(3, 25, 35, 0.92);
+  color: #f5fbfc;
+  font-weight: 800;
+}
+
+.asset-status p {
+  margin: 0;
+}
+
+.milestone-note {
+  margin: 0;
+  color: #b7ccd1;
+  text-align: center;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 640px) {
+  .game-header {
+    align-items: flex-end;
+  }
+
+  .secondary-button {
+    min-height: 2.5rem;
+    padding: 0.5rem 0.75rem;
+  }
+}
