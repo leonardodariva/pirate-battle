@@ -60,3 +60,20 @@ textures.
 Vitest covers the framework-independent rules: fixed-step accumulation, long
 frame protection, forward movement, rotation, simultaneous commands, arena
 boundaries, and conflicting turn input. PixiJS internals are not unit tested.
+
+Vitest is restricted to `src/**/*.test.ts`; Playwright owns the separate
+`tests/e2e/**/*.spec.ts` suite. This prevents one test runner from trying to
+execute the other runner's files.
+
+## End-to-end testing
+
+Playwright starts Vite in `test` mode and drives a real Chromium browser. The
+initial suite covers match start, asset completion, a single PixiJS canvas,
+keyboard movement and rotation, arena boundaries, resize stability, and clean
+scene recreation.
+
+Test mode installs a read-only `window.__GAME_TEST__` bridge. Playwright still
+uses real keyboard events and the production movement rules; the bridge only
+returns a copy of the resulting logical state so assertions do not depend on
+fragile pixel comparisons. Cleanup removes the bridge with the rest of the game
+runtime. Vite eliminates it from normal production builds.

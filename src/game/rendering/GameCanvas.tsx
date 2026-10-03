@@ -14,6 +14,7 @@ import { GAME_CONFIG } from '../config/gameConfig'
 import { GameLoop } from '../core/GameLoop'
 import { createInitialGameState, updateGameState } from '../core/GameState'
 import { KeyboardInput } from '../input/KeyboardInput'
+import { installGameTestBridge } from '../testing/GameTestBridge'
 
 type LoadState =
   | { status: 'loading'; progress: number }
@@ -100,6 +101,7 @@ export function GameCanvas() {
 
         let gameState = createInitialGameState(GAME_CONFIG)
         const keyboardInput = new KeyboardInput(window)
+        const removeTestBridge = installGameTestBridge(() => gameState)
         const gameLoop = new GameLoop(
           GAME_CONFIG.loop.fixedStepSeconds,
           GAME_CONFIG.loop.maxFrameDeltaSeconds,
@@ -146,6 +148,7 @@ export function GameCanvas() {
           application.ticker.remove(handleTick)
           gameLoop.reset()
           keyboardInput.destroy()
+          removeTestBridge()
         }
 
         renderScene()
