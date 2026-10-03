@@ -1,7 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
-import { Application, Assets, Sprite, Texture, TilingSprite } from 'pixi.js'
+import {
+  Application,
+  Assets,
+  Container,
+  Sprite,
+  Texture,
+  Ticker,
+  TilingSprite,
+} from 'pixi.js'
 import playerShipUrl from '../../../assets/png/default/ships/ship_5.png'
 import waterTextureUrl from '../../../assets/png/default/tiles/tile_73.png'
+import { GAME_CONFIG } from '../config/gameConfig'
+import { GameLoop } from '../core/GameLoop'
+import { createInitialGameState, updateGameState } from '../core/GameState'
+import { KeyboardInput } from '../input/KeyboardInput'
 
 type LoadState =
   | { status: 'loading'; progress: number }
@@ -24,22 +36,30 @@ export function GameCanvas() {
     }
 
     let disposed = false
+    let applicationInitialized = false
+    let applicationDestroyed = false
     let resizeObserver: ResizeObserver | undefined
-    let application: Application | undefined
+    let removeRuntimeListeners = () => {}
+    const application = new Application()
+
+    const destroyApplication = () => {
+      if (applicationInitialized && !applicationDestroyed) {
+        application.destroy(true, { children: true })
+        applicationDestroyed = true
+      }
+    }
 
     async function initialize(hostElement: HTMLDivElement) {
-      const app = new Application()
-      application = app
-
       try {
         setLoadState({ status: 'loading', progress: 0 })
 
-        await app.init({
+        await application.init({
           antialias: true,
           autoDensity: true,
-          backgroundColor: 0x168fba,
+          backgroundColor: 0x031923,
           resolution: Math.min(window.devicePixelRatio, 2),
         })
+        applicationInitialized = true
 
         const loadedTextures: Texture[] = []
         for (const assetUrl of [waterTextureUrl, playerShipUrl]) {
@@ -54,7 +74,7 @@ export function GameCanvas() {
         }
 
         if (disposed) {
-          app.destroy(true, { children: true })
+          destroyApplication()
           return
         }
 
@@ -63,34 +83,77 @@ export function GameCanvas() {
           throw new Error('The required game textures were not loaded.')
         }
 
-        app.canvas.setAttribute('aria-hidden', 'true')
-        hostElement.appendChild(app.canvas)
+        application.canvas.setAttribute('aria-hidden', 'true')
+        hostElement.appendChild(application.canvas)
 
+        const world = new Container()
         const water = new TilingSprite({
           texture: waterTexture,
-          width: 1,
-          height: 1,
+          width: GAME_CONFIG.arena.width,
+          height: GAME_CONFIG.arena.height,
         })
         const playerShip = new Sprite(playerTexture)
         playerShip.anchor.set(0.5)
         playerShip.scale.set(0.9)
-        app.stage.addChild(water, playerShip)
+        world.addChild(water, playerShip)
+        application.stage.addChild(world)
+
+        let gameState = createInitialGameState(GAME_CONFIG)
+        const keyboardInput = new KeyboardInput(window)
+        const gameLoop = new GameLoop(
+          GAME_CONFIG.loop.fixedStepSeconds,
+          GAME_CONFIG.loop.maxFrameDeltaSeconds,
+          (fixedStepSeconds) => {
+            gameState = updateGameState(
+              gameState,
+              keyboardInput.read(),
+              fixedStepSeconds,
+              GAME_CONFIG,
+            )
+          },
+        )
+
+        const renderScene = () => {
+          playerShip.position.set(gameState.player.x, gameState.player.y)
+          playerShip.rotation = gameState.player.rotation
+        }
+
+        const handleTick = (ticker: Ticker) => {
+          gameLoop.advance(ticker.deltaMS / 1000)
+          renderScene()
+        }
 
         const layoutScene = () => {
           const width = Math.max(hostElement.clientWidth, 1)
           const height = Math.max(hostElement.clientHeight, 1)
-          app.renderer.resize(width, height)
-          water.width = width
-          water.height = height
-          playerShip.position.set(width / 2, height / 2)
+          const worldScale = Math.min(
+            width / GAME_CONFIG.arena.width,
+            height / GAME_CONFIG.arena.height,
+          )
+
+          application.renderer.resize(width, height)
+          world.scale.set(worldScale)
+          world.position.set(
+            (width - GAME_CONFIG.arena.width * worldScale) / 2,
+            (height - GAME_CONFIG.arena.height * worldScale) / 2,
+          )
         }
 
+        application.ticker.add(handleTick)
         resizeObserver = new ResizeObserver(layoutScene)
         resizeObserver.observe(hostElement)
+        removeRuntimeListeners = () => {
+          application.ticker.remove(handleTick)
+          gameLoop.reset()
+          keyboardInput.destroy()
+        }
+
+        renderScene()
         layoutScene()
         setLoadState({ status: 'ready' })
       } catch (error) {
         console.error('Unable to load game assets.', error)
+        destroyApplication()
 
         if (!disposed) {
           setLoadState({ status: 'error' })
@@ -103,10 +166,8 @@ export function GameCanvas() {
     return () => {
       disposed = true
       resizeObserver?.disconnect()
-
-      if (application?.renderer) {
-        application.destroy(true, { children: true })
-      }
+      removeRuntimeListeners()
+      destroyApplication()
     }
   }, [loadAttempt])
 

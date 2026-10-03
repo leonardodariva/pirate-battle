@@ -10,8 +10,38 @@ be stored in React.
 unmounted. Its disposal guard handles React Strict Mode's development lifecycle
 without leaving a second canvas or renderer active.
 
-The scene currently has no simulation loop. A fixed-timestep loop will be added
-with player movement in the next milestone.
+## Simulation and fixed timestep
+
+`GameLoop` receives the variable time reported by the PixiJS ticker, stores it
+in an accumulator, and advances the simulation in fixed `1 / 60` second steps.
+Movement speed is therefore expressed in logical units per second rather than
+pixels per frame. A frame delta cap avoids a long update spiral after a stall.
+
+The current player update is a deterministic TypeScript function: the same
+state, input, delta, and configuration produce the same next state. PixiJS reads
+the resulting state but does not define movement rules.
+
+## Coordinate system and resize
+
+The simulation uses a fixed logical arena of `1280 x 720` units. The PixiJS
+world container is scaled uniformly and centered inside the available canvas.
+Window size and device pixel density can therefore change without changing
+positions, speeds, boundaries, or other gameplay rules. Unused space is
+letterboxed instead of stretching or cropping the arena.
+
+## Input
+
+`KeyboardInput` stores currently pressed gameplay keys and exposes a small input
+snapshot (`forward`, `turnLeft`, and `turnRight`). It does not mutate game state.
+This makes simultaneous input possible and lets future touch controls produce
+the same snapshot without changing movement logic. Key state is cleared on
+window blur and all listeners are removed when gameplay unmounts.
+
+## Current collision boundary
+
+The player is clamped to the arena using a configured circular boundary radius.
+This is intentionally conservative and predictable. Island collision and more
+specific collision shapes belong to a later milestone.
 
 ## Asset strategy
 
@@ -24,3 +54,9 @@ failure, and retry while PixiJS owns the rendered textures.
 Individual PNGs keep this first two-texture milestone easy to follow. The UI
 atlas will become preferable when a later milestone needs many HUD and control
 textures.
+
+## Unit testing
+
+Vitest covers the framework-independent rules: fixed-step accumulation, long
+frame protection, forward movement, rotation, simultaneous commands, arena
+boundaries, and conflicting turn input. PixiJS internals are not unit tested.

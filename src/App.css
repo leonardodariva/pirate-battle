@@ -141,10 +141,27 @@ button:focus-visible {
   margin: 0;
 }
 
-.milestone-note {
+.game-instructions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem 1.5rem;
   margin: 0;
   color: #b7ccd1;
   text-align: center;
+}
+
+kbd {
+  display: inline-grid;
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  place-items: center;
+  border: 1px solid rgba(183, 204, 209, 0.55);
+  border-bottom-width: 3px;
+  border-radius: 0.35rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5fbfc;
+  font: 700 0.8rem/1 monospace;
 }
 
 .visually-hidden {

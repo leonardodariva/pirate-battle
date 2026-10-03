@@ -11,7 +11,7 @@ function App() {
         <header className="game-header">
           <div>
             <p className="eyebrow">Jungle Gaming Challenge</p>
-            <h1>Open Waters</h1>
+            <h1>Pirate Battle</h1>
           </div>
           <button className="secondary-button" onClick={() => setIsPlaying(false)}>
             Leave match
@@ -25,9 +25,10 @@ function App() {
           <GameCanvas />
         </section>
 
-        <p className="milestone-note" role="status">
-          Arena ready. Movement and weapons arrive in the next milestone.
-        </p>
+        <div className="game-instructions" aria-label="Game controls">
+          <span><kbd>W</kbd> / <kbd>↑</kbd> Move forward</span>
+          <span><kbd>A</kbd> <kbd>D</kbd> / <kbd>←</kbd> <kbd>→</kbd> Rotate</span>
+        </div>
       </main>
     )
   }
@@ -36,7 +37,7 @@ function App() {
     <main className="menu-screen">
       <section className="menu-card" aria-labelledby="game-title">
         <p className="eyebrow">Jungle Gaming Challenge</p>
-        <h1 id="game-title">Open Waters</h1>
+        <h1 id="game-title">Pirate Battle</h1>
         <p className="menu-copy">
           A top-down naval shooter. This first milestone validates the React and
           PixiJS foundation.
