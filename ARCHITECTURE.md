@@ -106,8 +106,22 @@ valid route. Once the direct segment is clear, it resumes pursuing the player.
 This is deliberately simpler than A*: it fits the current sparse arena but is
 not intended for complex maps with many tightly packed obstacles.
 
-Player death and periodic spawning will build on the same enemy state in
-following milestones.
+## Spawn system
+
+`SpawnSystem` is a pure rule layer that decides when and where a new enemy is
+created. A match starts with a Chaser, and after the configured interval it
+creates a Shooter. This guarantees that both required enemy behaviours appear
+in a normal match. Later spawns follow the repeatable sequence Chaser, Chaser,
+Shooter; it provides a two-to-one weighting without unseeded random values,
+which keeps tests and bug reports reproducible.
+
+Every candidate comes from a configured list around the arena and is accepted
+only if its collision circle is inside the arena, outside island collision
+bounds, and at least the configured distance from the player. The state stores
+the spawn timer, the number of enemies already spawned, and the next stable id.
+It lives in `GameState`, rather than PixiJS, so rendering cannot create an
+invalid enemy. A future seeded random selection can replace the candidate order
+if a larger arena needs more variety.
 
 ## Shooter enemy
 

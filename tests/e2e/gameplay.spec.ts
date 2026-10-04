@@ -36,6 +36,23 @@ test('starts a match and loads one PixiJS canvas', async ({ page }) => {
   expect(state.player.rotation).toBe(0)
 })
 
+test('spawns the guaranteed Chaser first and Shooter second', async ({ page }) => {
+  await startGame(page)
+
+  const initialState = await readGameState(page)
+  expect(initialState.enemies).toHaveLength(1)
+  expect(initialState.enemies[0]?.type).toBe('chaser')
+
+  await page.waitForFunction(() =>
+    window.__GAME_TEST__
+      ?.getState()
+      .enemies.some((enemy) => enemy.type === 'shooter'),
+  )
+
+  const spawnedState = await readGameState(page)
+  expect(spawnedState.enemies[1]).toMatchObject({ id: 2, type: 'shooter' })
+})
+
 test('moves and rotates through real keyboard input', async ({ page }) => {
   await startGame(page)
   const initialState = await readGameState(page)

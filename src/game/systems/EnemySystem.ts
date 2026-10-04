@@ -48,28 +48,6 @@ interface TargetPosition {
 
 const WAYPOINT_CLEARANCE = 12
 
-export function createInitialEnemies(config: GameConfig): EnemyState[] {
-  return [
-    {
-      id: 1,
-      type: 'chaser',
-      x: config.chaser.firstSpawn.x,
-      y: config.chaser.firstSpawn.y,
-      rotation: config.chaser.firstSpawn.rotation,
-      health: config.chaser.maxHealth,
-    },
-    {
-      id: 2,
-      type: 'shooter',
-      x: config.shooter.firstSpawn.x,
-      y: config.shooter.firstSpawn.y,
-      rotation: config.shooter.firstSpawn.rotation,
-      health: config.shooter.maxHealth,
-      fireCooldownRemaining: 0,
-    },
-  ]
-}
-
 export function updateEnemies(
   enemies: EnemyState[],
   target: TargetPosition,

@@ -10,10 +10,14 @@ import {
   resolvePlayerProjectileHits,
 } from '../systems/CombatSystem'
 import {
-  createInitialEnemies,
   updateEnemies,
   type EnemyState,
 } from '../systems/EnemySystem'
+import {
+  spawnInitialEnemy,
+  updateSpawning,
+  type SpawnState,
+} from '../systems/SpawnSystem'
 
 export interface PlayerInput {
   forward: boolean
@@ -51,23 +55,28 @@ export interface GameState {
   rightBroadsideCooldownRemaining: number
   nextProjectileId: number
   score: number
+  spawn: SpawnState
 }
 
 export function createInitialGameState(config: GameConfig): GameState {
+  const player = {
+    x: config.arena.width / 2,
+    y: config.arena.height / 2,
+    rotation: 0,
+    health: config.player.maxHealth,
+  }
+  const initialSpawn = spawnInitialEnemy(player, config)
+
   return {
-    player: {
-      x: config.arena.width / 2,
-      y: config.arena.height / 2,
-      rotation: 0,
-      health: config.player.maxHealth,
-    },
-    enemies: createInitialEnemies(config),
+    player,
+    enemies: initialSpawn.enemies,
     projectiles: [],
     frontCannonCooldownRemaining: 0,
     leftBroadsideCooldownRemaining: 0,
     rightBroadsideCooldownRemaining: 0,
     nextProjectileId: 1,
     score: 0,
+    spawn: initialSpawn.spawnState,
   }
 }
 
@@ -257,15 +266,24 @@ export function updateGameState(
     rightBroadsideCooldownRemaining = config.broadside.cooldownSeconds
   }
 
+  const spawnUpdateResult = updateSpawning(
+    enemies,
+    state.spawn,
+    player,
+    deltaSeconds,
+    config,
+  )
+
   return {
     player,
-    enemies,
+    enemies: spawnUpdateResult.enemies,
     projectiles,
     frontCannonCooldownRemaining,
     leftBroadsideCooldownRemaining,
     rightBroadsideCooldownRemaining,
     nextProjectileId,
     score,
+    spawn: spawnUpdateResult.spawnState,
   }
 }
 

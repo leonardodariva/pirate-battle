@@ -5,36 +5,11 @@ import {
   insetRectangle,
 } from '../utils/collision'
 import {
-  createInitialEnemies,
   updateEnemies,
   type EnemyState,
 } from './EnemySystem'
 
 describe('EnemySystem', () => {
-  it('creates deterministic chaser and shooter enemies from configuration', () => {
-    const enemies = createInitialEnemies(GAME_CONFIG)
-
-    expect(enemies).toEqual([
-      {
-        id: 1,
-        type: 'chaser',
-        x: GAME_CONFIG.chaser.firstSpawn.x,
-        y: GAME_CONFIG.chaser.firstSpawn.y,
-        rotation: GAME_CONFIG.chaser.firstSpawn.rotation,
-        health: GAME_CONFIG.chaser.maxHealth,
-      },
-      {
-        id: 2,
-        type: 'shooter',
-        x: GAME_CONFIG.shooter.firstSpawn.x,
-        y: GAME_CONFIG.shooter.firstSpawn.y,
-        rotation: GAME_CONFIG.shooter.firstSpawn.rotation,
-        health: GAME_CONFIG.shooter.maxHealth,
-        fireCooldownRemaining: 0,
-      },
-    ])
-  })
-
   it('moves forward toward a player directly ahead', () => {
     const enemy: EnemyState = {
       id: 1,
