@@ -27,6 +27,18 @@ import islandRightUrl from '../../../assets/png/default/tiles/tile_19.png'
 import islandBottomLeftUrl from '../../../assets/png/default/tiles/tile_33.png'
 import islandBottomUrl from '../../../assets/png/default/tiles/tile_34.png'
 import islandBottomRightUrl from '../../../assets/png/default/tiles/tile_35.png'
+import grassIslandTopLeftUrl from '../../../assets/png/default/tiles/tile_6.png'
+import grassIslandTopUrl from '../../../assets/png/default/tiles/tile_7.png'
+import grassIslandTopFlowersUrl from '../../../assets/png/default/tiles/tile_8.png'
+import grassIslandTopRightUrl from '../../../assets/png/default/tiles/tile_9.png'
+import grassIslandLeftUrl from '../../../assets/png/default/tiles/tile_22.png'
+import grassIslandCenterUrl from '../../../assets/png/default/tiles/tile_23.png'
+import grassIslandFlowersUrl from '../../../assets/png/default/tiles/tile_24.png'
+import grassIslandRightUrl from '../../../assets/png/default/tiles/tile_25.png'
+import grassIslandBottomLeftUrl from '../../../assets/png/default/tiles/tile_38.png'
+import grassIslandBottomGrassUrl from '../../../assets/png/default/tiles/tile_39.png'
+import grassIslandBottomUrl from '../../../assets/png/default/tiles/tile_40.png'
+import grassIslandBottomRightUrl from '../../../assets/png/default/tiles/tile_41.png'
 import waterTextureUrl from '../../../assets/png/default/tiles/tile_73.png'
 import playerHealthFrameUrl from '../../../assets/png/default/ui/hud/health_frame.png'
 import playerHealthGreenUrl from '../../../assets/png/default/ui/hud/health_fill_green.png'
@@ -221,7 +233,7 @@ export function GameCanvas({
         })
         applicationInitialized = true
 
-        const islandAssetUrls = [
+        const sandIslandAssetUrls = [
           islandTopLeftUrl,
           islandTopUrl,
           islandTopRightUrl,
@@ -232,6 +244,20 @@ export function GameCanvas({
           islandBottomUrl,
           islandBottomRightUrl,
         ]
+        const grassIslandAssetUrls = [
+          grassIslandTopLeftUrl,
+          grassIslandTopUrl,
+          grassIslandTopFlowersUrl,
+          grassIslandTopRightUrl,
+          grassIslandLeftUrl,
+          grassIslandCenterUrl,
+          grassIslandFlowersUrl,
+          grassIslandRightUrl,
+          grassIslandBottomLeftUrl,
+          grassIslandBottomGrassUrl,
+          grassIslandBottomUrl,
+          grassIslandBottomRightUrl,
+        ]
         const assetUrls = [
           waterTextureUrl,
           playerShipUrl,
@@ -241,7 +267,8 @@ export function GameCanvas({
           explosionSmallUrl,
           fireLargeUrl,
           fireSmallUrl,
-          ...islandAssetUrls,
+          ...sandIslandAssetUrls,
+          ...grassIslandAssetUrls,
           chaserShipUrl,
           shooterShipUrl,
           playerHealthFrameUrl,
@@ -294,7 +321,8 @@ export function GameCanvas({
         ]
         const chaserTexture = getTexture(chaserShipUrl)
         const shooterTexture = getTexture(shooterShipUrl)
-        const islandTextures = islandAssetUrls.map(getTexture)
+        const sandIslandTextures = sandIslandAssetUrls.map(getTexture)
+        const grassIslandTextures = grassIslandAssetUrls.map(getTexture)
         const playerHealthFrameTexture = getTexture(playerHealthFrameUrl)
         const playerHealthGreenTexture = getTexture(playerHealthGreenUrl)
         const playerHealthAmberTexture = getTexture(playerHealthAmberUrl)
@@ -316,15 +344,29 @@ export function GameCanvas({
         for (const island of config.islands) {
           const islandContainer = new Container()
           islandContainer.position.set(island.x, island.y)
+          const islandTextures =
+            island.visualStyle === 'grass'
+              ? grassIslandTextures
+              : sandIslandTextures
+          const columns = island.visualStyle === 'grass' ? 4 : 3
+          const rows = islandTextures.length / columns
+          islandContainer.scale.set(
+            island.width / (columns * 64),
+            island.height / (rows * 64),
+          )
 
           islandTextures.forEach((texture, index) => {
             const tile = new Sprite(texture)
-            tile.position.set((index % 3) * 64, Math.floor(index / 3) * 64)
+            tile.position.set(
+              (index % columns) * 64,
+              Math.floor(index / columns) * 64,
+            )
             islandContainer.addChild(tile)
           })
 
           islandLayer.addChild(islandContainer)
         }
+        const projectileTrailLayer = new Graphics()
         const projectileLayer = new Container()
         const projectileSprites = new Map<number, Sprite>()
         const enemyLayer = new Container()
@@ -344,6 +386,7 @@ export function GameCanvas({
         world.addChild(
           water,
           islandLayer,
+          projectileTrailLayer,
           projectileLayer,
           enemyLayer,
           playerShip,
@@ -562,6 +605,8 @@ export function GameCanvas({
         }
 
         const renderScene = () => {
+          projectileTrailLayer.clear()
+
           playerShip.position.set(gameState.player.x, gameState.player.y)
           playerShip.rotation =
             gameState.player.rotation + PLAYER_SPRITE_ROTATION_OFFSET
@@ -679,6 +724,19 @@ export function GameCanvas({
           }
 
           for (const projectile of gameState.projectiles) {
+            const trailLength = projectile.owner === 'player' ? 42 : 30
+            const trailStartX =
+              projectile.x - Math.sin(projectile.direction) * trailLength
+            const trailStartY =
+              projectile.y + Math.cos(projectile.direction) * trailLength
+            projectileTrailLayer
+              .moveTo(trailStartX, trailStartY)
+              .lineTo(projectile.x, projectile.y)
+              .stroke({
+                width: projectile.owner === 'player' ? 3 : 2,
+                color: projectile.owner === 'player' ? 0xd9fbff : 0xffb36b,
+                alpha: 0.72,
+              })
             let sprite = projectileSprites.get(projectile.id)
 
             if (!sprite) {

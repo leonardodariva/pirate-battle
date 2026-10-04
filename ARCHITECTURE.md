@@ -176,16 +176,20 @@ specific collision shapes can be introduced later where needed.
 
 ## Island collision
 
-Each island is assembled from a `3 x 3` group of official 64-pixel tiles.
+Each island is assembled from a configured visual style using official
+64-pixel tiles. The sand island uses a `3 x 3` group; the grass island
+uses a `4 x 3` source group with shoreline, vegetation, and flower details.
+The completed mosaic is fitted to the island's configured logical bounds, so
+its visible shore and collision area remain aligned.
 Its logical collision area is an inset rectangle so the irregular transparent
 edge does not feel like an invisible wall. Player collision uses a circle versus
 rectangle test and rejects movement into the island while preserving rotation.
 The configured position leaves enough navigable water between the island and
 all four arena boundaries for the player's collision circle.
 
-Two configured islands provide distinct routes through the arena. They share
-the same rendering and collision representation, so adding an island remains a
-data change rather than a new gameplay branch.
+Two configured islands provide distinct routes and visual landmarks through
+the arena. Their style and dimensions are data, while the same rendering and
+collision path handles both variants.
 
 The player uses a conservative radius for arena boundaries. Island contact uses
 three smaller circles along the ship's rotated forward axis, approximating its
@@ -211,6 +215,9 @@ and are removed when their lifetime expires or they leave the logical arena.
 PixiJS keeps a sprite map keyed by projectile id. Rendering creates and removes
 sprites to mirror the simulation, but it does not decide when a shot is allowed
 or how it moves. The projectile uses the official `cannon_ball.png` asset.
+Each active projectile also receives a short owner-colored trail drawn behind
+its simulated direction. The trail is cleared and redrawn every render frame,
+so it cannot outlive a projectile or influence gameplay.
 
 Short-lived PixiJS effects mirror simulation transitions without becoming game
 state: a new projectile creates a muzzle flash, a removed projectile creates an

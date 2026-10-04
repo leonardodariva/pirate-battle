@@ -67,6 +67,7 @@ export interface GameConfig {
   }
   islands: ReadonlyArray<{
     id: string
+    visualStyle: 'sand' | 'grass'
     x: number
     y: number
     width: number
@@ -149,6 +150,7 @@ export const GAME_CONFIG: GameConfig = {
   islands: [
     {
       id: 'north-island',
+      visualStyle: 'grass',
       x: 800,
       y: 180,
       width: 192,
@@ -157,6 +159,7 @@ export const GAME_CONFIG: GameConfig = {
     },
     {
       id: 'southwest-island',
+      visualStyle: 'sand',
       x: 190,
       y: 500,
       width: 192,

@@ -12,7 +12,8 @@ The original challenge specification is available in the
 
 - React 19 for menus, forms, HUD, dialogs, and accessible game information.
 - TypeScript in strict mode for simulation, contracts, and application code.
-- PixiJS 8 for the arena, ships, projectiles, island, and health bars.
+- PixiJS 8 for the arena, ships, projectile trails, varied islands, and health
+  bars.
 - TanStack Query for remote cache, mutations, invalidation, and retries.
 - Axios as the centralized HTTP client.
 - MSW as the browser REST backend.
@@ -152,7 +153,8 @@ included in `public/` and therefore runs in the published build.
 
 - Only the two most important registration-failure scenarios are user-selectable;
   empty/error/variable-latency query scenarios are not exposed in the UI.
-- Combat uses lightweight official muzzle-flash, impact, and explosion assets;
+- Combat uses lightweight official muzzle-flash, projectile-trail, impact, and
+  explosion assets;
   audio remains a documented future enhancement.
 - The initial JavaScript bundle produces Vite's 500 kB warning; gzip output is
   around 200 kB and future work could lazy-load PixiJS and secondary screens.
