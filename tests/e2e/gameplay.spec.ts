@@ -220,6 +220,61 @@ test('persists a failed registration across refresh and retries it', async ({
   await expect(page.getByRole('row').nth(1)).toContainText('Time up')
 })
 
+test('recovers from a timeout after commit without duplicating the match', async ({
+  page,
+}) => {
+  await startGame(page)
+  await page.evaluate(
+    ({ scenarioKey }) =>
+      window.localStorage.setItem(scenarioKey, 'post-timeout-after-commit'),
+    { scenarioKey: NETWORK_SCENARIO_STORAGE_KEY },
+  )
+  await page.evaluate(() => window.__GAME_TEST__?.setRemainingTime(0.05))
+
+  await expect(
+    page.locator('.result-stats dd').filter({ hasText: 'Pending retry' }),
+  ).toBeVisible({ timeout: 12_000 })
+  const stateAfterTimeout = await page.evaluate(
+    ({ confirmedKey, pendingKey }) => ({
+      confirmed: JSON.parse(
+        window.localStorage.getItem(confirmedKey) ?? '[]',
+      ),
+      pending: JSON.parse(window.localStorage.getItem(pendingKey) ?? '[]'),
+    }),
+    {
+      confirmedKey: CONFIRMED_MATCHES_STORAGE_KEY,
+      pendingKey: PENDING_MATCHES_STORAGE_KEY,
+    },
+  )
+  expect(stateAfterTimeout.confirmed).toHaveLength(1)
+  expect(stateAfterTimeout.pending).toHaveLength(1)
+  expect(stateAfterTimeout.pending[0].matchId).toBe(
+    stateAfterTimeout.confirmed[0].matchId,
+  )
+
+  await page.evaluate(
+    ({ scenarioKey }) => window.localStorage.setItem(scenarioKey, 'normal'),
+    { scenarioKey: NETWORK_SCENARIO_STORAGE_KEY },
+  )
+  await page.getByRole('button', { name: 'Retry', exact: true }).click()
+  await expect(page.getByText('Confirmed', { exact: true })).toBeVisible()
+
+  const stateAfterRetry = await page.evaluate(
+    ({ confirmedKey, pendingKey }) => ({
+      confirmed: JSON.parse(
+        window.localStorage.getItem(confirmedKey) ?? '[]',
+      ),
+      pending: JSON.parse(window.localStorage.getItem(pendingKey) ?? '[]'),
+    }),
+    {
+      confirmedKey: CONFIRMED_MATCHES_STORAGE_KEY,
+      pendingKey: PENDING_MATCHES_STORAGE_KEY,
+    },
+  )
+  expect(stateAfterRetry.confirmed).toHaveLength(1)
+  expect(stateAfterRetry.pending).toEqual([])
+})
+
 test('validates, persists, and snapshots gameplay options', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('button', { name: 'Options' }).click()
@@ -233,6 +288,9 @@ test('validates, persists, and snapshots gameplay options', async ({ page }) => 
   await expect(page.getByRole('alert')).toHaveCount(2)
   await durationInput.fill('90')
   await spawnInput.fill('3')
+  await page
+    .getByLabel('Mock network scenario')
+    .selectOption('post-network-error')
   await page.getByRole('button', { name: 'Save' }).click()
 
   await expect(
@@ -242,6 +300,9 @@ test('validates, persists, and snapshots gameplay options', async ({ page }) => 
   await page.getByRole('button', { name: 'Options' }).click()
   await expect(page.getByLabel('Game session time')).toHaveValue('90')
   await expect(page.getByLabel('Enemy spawn time')).toHaveValue('3')
+  await expect(page.getByLabel('Mock network scenario')).toHaveValue(
+    'post-network-error',
+  )
 
   await page.getByRole('button', { name: 'Back' }).click()
   await page.getByRole('button', { name: 'Play' }).click()

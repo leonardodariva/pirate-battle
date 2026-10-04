@@ -363,7 +363,8 @@ h1 {
   font-size: 0.8rem;
 }
 
-.form-field input {
+.form-field input,
+.form-field select {
   width: 100%;
   border: 1px solid rgba(128, 216, 229, 0.45);
   border-radius: 0.65rem;
@@ -374,7 +375,8 @@ h1 {
   font-weight: 800;
 }
 
-.form-field input:focus-visible {
+.form-field input:focus-visible,
+.form-field select:focus-visible {
   outline: 3px solid #f6d365;
   outline-offset: 2px;
 }
@@ -809,6 +811,71 @@ kbd {
   .menu-card:has(.pending-registration) {
     width: min(92vw, 72svh, 24rem);
     padding: 1.15rem 1.5rem;
+  }
+
+  .options-card {
+    width: min(96vw, 52rem);
+    max-height: calc(100svh - 0.7rem);
+    overflow-y: auto;
+    padding: 0.65rem 1rem;
+  }
+
+  .options-card .eyebrow,
+  .options-intro {
+    display: none;
+  }
+
+  .options-card h1 {
+    margin-bottom: 0.5rem;
+    font-size: 1.65rem;
+  }
+
+  .options-card form {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+
+  .options-card .form-field {
+    align-content: start;
+    gap: 0.2rem;
+    margin: 0;
+  }
+
+  .options-card .form-field label {
+    font-size: 0.75rem;
+  }
+
+  .options-card .form-field span,
+  .options-card .field-error {
+    font-size: 0.62rem;
+  }
+
+  .options-card .form-field input,
+  .options-card .form-field select {
+    min-width: 0;
+    padding: 0.45rem 0.55rem;
+    font-size: 0.72rem;
+  }
+
+  .options-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.45rem;
+    margin-top: 0.2rem;
+  }
+
+  .options-actions button {
+    min-height: 2rem;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.72rem;
+  }
+
+  .options-actions .primary-button {
+    width: 9rem;
+    font-size: 0.9rem;
   }
 
   .jungle-logo {

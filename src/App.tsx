@@ -22,6 +22,13 @@ import {
   saveGameOptions,
 } from './storage/gameOptionsStorage'
 import { getOrCreatePlayerIdentity } from './storage/playerIdentityStorage'
+import { PENDING_MATCHES_STORAGE_KEY } from './storage/pendingMatchStorage'
+import { CONFIRMED_MATCHES_STORAGE_KEY } from './mocks/mockMatchStore'
+import {
+  readNetworkScenario,
+  saveNetworkScenario,
+  type NetworkScenario,
+} from './mocks/networkScenario'
 import './App.css'
 
 type AppScreen =
@@ -35,6 +42,7 @@ type AppScreen =
 function App() {
   const [screen, setScreen] = useState<AppScreen>('menu')
   const [options, setOptions] = useState<GameOptions>(loadGameOptions)
+  const [networkScenario, setNetworkScenario] = useState(readNetworkScenario)
   const [player] = useState(getOrCreatePlayerIdentity)
   const [matchConfig, setMatchConfig] = useState<GameConfig>(() =>
     createMatchConfig(GAME_CONFIG, options),
@@ -62,10 +70,22 @@ function App() {
     setGameUiState(null)
   }
 
-  const handleSaveOptions = (nextOptions: GameOptions) => {
+  const handleSaveOptions = (
+    nextOptions: GameOptions,
+    nextNetworkScenario: NetworkScenario,
+  ) => {
     saveGameOptions(nextOptions)
+    saveNetworkScenario(nextNetworkScenario)
     setOptions(nextOptions)
+    setNetworkScenario(nextNetworkScenario)
     setScreen('menu')
+  }
+
+  const handleResetMockData = () => {
+    window.localStorage.removeItem(CONFIRMED_MATCHES_STORAGE_KEY)
+    window.localStorage.removeItem(PENDING_MATCHES_STORAGE_KEY)
+    saveNetworkScenario('normal')
+    window.location.reload()
   }
 
   const handleGameStateChange = (nextState: GameUiState) => {
@@ -215,7 +235,9 @@ function App() {
     return (
       <OptionsScreen
         options={options}
+        networkScenario={networkScenario}
         onSave={handleSaveOptions}
+        onResetMockData={handleResetMockData}
         onCancel={() => setScreen('menu')}
       />
     )

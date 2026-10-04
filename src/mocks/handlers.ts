@@ -84,8 +84,16 @@ export const handlers = [
       )
     }
 
-    if (readNetworkScenario() === 'post-network-error') {
+    const scenario = readNetworkScenario()
+
+    if (scenario === 'post-network-error') {
       return HttpResponse.error()
+    }
+
+    if (scenario === 'post-timeout-after-commit') {
+      const result = registerMatch(body)
+      await delay(8_500)
+      return HttpResponse.json(result, { status: result.created ? 201 : 200 })
     }
 
     await delay(180)

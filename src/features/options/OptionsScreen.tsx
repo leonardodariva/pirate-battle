@@ -5,19 +5,28 @@ import {
   type GameOptions,
   type GameOptionsErrors,
 } from '../../game/config/gameOptions'
+import {
+  NETWORK_SCENARIO_OPTIONS,
+  type NetworkScenario,
+} from '../../mocks/networkScenario'
 
 interface OptionsScreenProps {
   options: GameOptions
-  onSave: (options: GameOptions) => void
+  networkScenario: NetworkScenario
+  onSave: (options: GameOptions, networkScenario: NetworkScenario) => void
+  onResetMockData: () => void
   onCancel: () => void
 }
 
 export function OptionsScreen({
   options,
+  networkScenario,
   onSave,
+  onResetMockData,
   onCancel,
 }: OptionsScreenProps) {
   const [draft, setDraft] = useState(options)
+  const [scenarioDraft, setScenarioDraft] = useState(networkScenario)
   const [errors, setErrors] = useState<GameOptionsErrors>({})
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -26,7 +35,7 @@ export function OptionsScreen({
     setErrors(nextErrors)
 
     if (Object.keys(nextErrors).length === 0) {
-      onSave(draft)
+      onSave(draft, scenarioDraft)
     }
   }
 
@@ -110,6 +119,24 @@ export function OptionsScreen({
             )}
           </div>
 
+          <div className="form-field">
+            <label htmlFor="network-scenario">Mock network scenario</label>
+            <span>Used to demonstrate registration failures safely</span>
+            <select
+              id="network-scenario"
+              value={scenarioDraft}
+              onChange={(event) =>
+                setScenarioDraft(event.target.value as NetworkScenario)
+              }
+            >
+              {NETWORK_SCENARIO_OPTIONS.map((scenario) => (
+                <option key={scenario.value} value={scenario.value}>
+                  {scenario.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="options-actions">
             <button className="primary-button" type="submit">
               Save
@@ -120,6 +147,13 @@ export function OptionsScreen({
               onClick={onCancel}
             >
               Back
+            </button>
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={onResetMockData}
+            >
+              Reset mock data
             </button>
           </div>
         </form>

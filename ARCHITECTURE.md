@@ -99,7 +99,13 @@ does not block Play, survives refresh, and exposes Retry on both the result and
 main-menu screens. Confirmation removes only the matching `matchId`, then
 invalidates Ranking and Match History. A minimal persisted `post-network-error`
 mock scenario exists to verify this path; the complete scenario selector and
-the special timeout-after-commit behavior remain deferred.
+additional query scenarios remain deferred.
+
+The `post-timeout-after-commit` scenario deliberately writes the record before
+delaying its response beyond the Axios timeout. The client therefore queues the
+apparently failed record. Retrying under a healthy connection sends the same
+`matchId`; the idempotent store returns the already committed record and the
+pending copy is removed without creating a duplicate.
 
 MSW starts before React mounts and uses the generated worker from `public/`, so
 the same REST boundary is present in development, Playwright, preview, and the
