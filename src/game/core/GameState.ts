@@ -4,7 +4,10 @@ import {
   getRotatedCircleCenters,
   insetRectangle,
 } from '../utils/collision'
-import { resolveChaserPlayerCollisions } from '../systems/CombatSystem'
+import {
+  resolveChaserPlayerCollisions,
+  resolvePlayerProjectileHits,
+} from '../systems/CombatSystem'
 import {
   createInitialEnemies,
   updateEnemies,
@@ -131,13 +134,6 @@ export function updateGameState(
     deltaSeconds,
     config,
   )
-  const combatResult = resolveChaserPlayerCollisions(
-    movedPlayer,
-    movedEnemies,
-    state.score,
-    config,
-  )
-  const { player, enemies, score } = combatResult
   let frontCannonCooldownRemaining = Math.max(
     0,
     state.frontCannonCooldownRemaining - deltaSeconds,
@@ -151,7 +147,7 @@ export function updateGameState(
     state.rightBroadsideCooldownRemaining - deltaSeconds,
   )
   let nextProjectileId = state.nextProjectileId
-  const projectiles = state.projectiles
+  const movedProjectiles = state.projectiles
     .map((projectile) => ({
       ...projectile,
       x:
@@ -178,6 +174,20 @@ export function updateGameState(
           ),
         ),
     )
+  const projectileCombatResult = resolvePlayerProjectileHits(
+    movedEnemies,
+    movedProjectiles,
+    state.score,
+    config,
+  )
+  const contactCombatResult = resolveChaserPlayerCollisions(
+    movedPlayer,
+    projectileCombatResult.enemies,
+    projectileCombatResult.score,
+    config,
+  )
+  const { player, enemies, score } = contactCombatResult
+  const projectiles = projectileCombatResult.projectiles
 
   if (input.fireFront && frontCannonCooldownRemaining === 0) {
     projectiles.push({

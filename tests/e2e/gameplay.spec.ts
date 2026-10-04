@@ -106,6 +106,30 @@ test('applies chaser collision damage once without awarding score', async ({
   expect(collisionState.score).toBe(0)
 })
 
+test('damages and scores a chaser kill with a real projectile', async ({
+  page,
+}) => {
+  await startGame(page)
+  await page.evaluate(() => {
+    window.__GAME_TEST__?.placeChaser({
+      x: 640,
+      y: 250,
+      rotation: Math.PI,
+      health: 1,
+    })
+  })
+
+  await page.keyboard.press('Space')
+  await page.waitForFunction(() => {
+    const state = window.__GAME_TEST__?.getState()
+    return state?.score === 1 && state.enemies.length === 0
+  })
+
+  const defeatedState = await readGameState(page)
+  expect(defeatedState.player.health).toBe(100)
+  expect(defeatedState.projectiles).toHaveLength(0)
+})
+
 test('fires the front cannon through real keyboard input', async ({ page }) => {
   await startGame(page)
   const initialState = await readGameState(page)

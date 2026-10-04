@@ -22,6 +22,13 @@ import islandBottomLeftUrl from '../../../assets/png/default/tiles/tile_33.png'
 import islandBottomUrl from '../../../assets/png/default/tiles/tile_34.png'
 import islandBottomRightUrl from '../../../assets/png/default/tiles/tile_35.png'
 import waterTextureUrl from '../../../assets/png/default/tiles/tile_73.png'
+import playerHealthFrameUrl from '../../../assets/png/default/ui/hud/health_frame.png'
+import playerHealthGreenUrl from '../../../assets/png/default/ui/hud/health_fill_green.png'
+import playerHealthAmberUrl from '../../../assets/png/default/ui/hud/health_fill_amber.png'
+import playerHealthRedUrl from '../../../assets/png/default/ui/hud/health_fill_red.png'
+import enemyHealthFrameUrl from '../../../assets/png/default/ui/hud/enemy_health_frame.png'
+import enemyHealthGreenUrl from '../../../assets/png/default/ui/hud/enemy_health_fill_green.png'
+import enemyHealthRedUrl from '../../../assets/png/default/ui/hud/enemy_health_fill_red.png'
 import { GAME_CONFIG } from '../config/gameConfig'
 import { GameLoop } from '../core/GameLoop'
 import { createInitialGameState, updateGameState } from '../core/GameState'
@@ -34,30 +41,73 @@ type LoadState =
   | { status: 'error' }
 
 const PLAYER_SPRITE_ROTATION_OFFSET = Math.PI
-const HEALTH_BAR_WIDTH = 52
-const HEALTH_BAR_HEIGHT = 6
+const PLAYER_HEALTH_BAR = {
+  width: 256,
+  height: 48,
+  fillX: 30,
+  fillY: 15,
+  fillWidth: 196,
+  fillHeight: 20,
+  scale: 0.32,
+  offsetY: 72,
+}
+const ENEMY_HEALTH_BAR = {
+  width: 160,
+  height: 40,
+  fillX: 24,
+  fillY: 12,
+  fillWidth: 112,
+  fillHeight: 15,
+  scale: 0.36,
+  offsetY: 66,
+}
 
-function drawHealthBar(
-  graphics: Graphics,
+interface HealthBarView {
+  container: Container
+  fill: Sprite
+  mask: Graphics
+}
+
+function createHealthBar(
+  frameTexture: Texture,
+  fillTexture: Texture,
+  metrics: typeof PLAYER_HEALTH_BAR,
+): HealthBarView {
+  const container = new Container()
+  const frame = new Sprite(frameTexture)
+  const fill = new Sprite(fillTexture)
+  const mask = new Graphics()
+
+  fill.mask = mask
+  container.addChild(frame, fill, mask)
+  container.pivot.set(metrics.width / 2, metrics.height / 2)
+  container.scale.set(metrics.scale)
+
+  return { container, fill, mask }
+}
+
+function updateHealthBar(
+  view: HealthBarView,
   x: number,
   y: number,
   currentHealth: number,
   maximumHealth: number,
+  fillTexture: Texture,
+  metrics: typeof PLAYER_HEALTH_BAR,
 ) {
   const healthRatio = Math.max(0, Math.min(1, currentHealth / maximumHealth))
 
-  graphics
+  view.fill.texture = fillTexture
+  view.mask
     .clear()
-    .rect(-HEALTH_BAR_WIDTH / 2, 0, HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT)
-    .fill(0x4a1118)
     .rect(
-      -HEALTH_BAR_WIDTH / 2,
-      0,
-      HEALTH_BAR_WIDTH * healthRatio,
-      HEALTH_BAR_HEIGHT,
+      metrics.fillX,
+      metrics.fillY,
+      metrics.fillWidth * healthRatio,
+      metrics.fillHeight,
     )
-    .fill(0x55d66b)
-  graphics.position.set(x, y - 68)
+    .fill(0xffffff)
+  view.container.position.set(x, y - metrics.offsetY)
 }
 
 export function GameCanvas() {
@@ -118,16 +168,23 @@ export function GameCanvas() {
           cannonBallUrl,
           ...islandAssetUrls,
           chaserShipUrl,
+          playerHealthFrameUrl,
+          playerHealthGreenUrl,
+          playerHealthAmberUrl,
+          playerHealthRedUrl,
+          enemyHealthFrameUrl,
+          enemyHealthGreenUrl,
+          enemyHealthRedUrl,
         ]
-        const loadedTextures: Texture[] = []
+        const loadedTextures = new Map<string, Texture>()
         for (const assetUrl of assetUrls) {
-          loadedTextures.push(await Assets.load<Texture>(assetUrl))
+          loadedTextures.set(assetUrl, await Assets.load<Texture>(assetUrl))
 
           if (!disposed) {
             setLoadState({
               status: 'loading',
               progress: Math.round(
-                (loadedTextures.length / assetUrls.length) * 100,
+                (loadedTextures.size / assetUrls.length) * 100,
               ),
             })
           }
@@ -138,18 +195,27 @@ export function GameCanvas() {
           return
         }
 
-        const [waterTexture, playerTexture, cannonBallTexture] = loadedTextures
-        const islandTextures = loadedTextures.slice(3, 12)
-        const chaserTexture = loadedTextures[12]
-        if (
-          !waterTexture ||
-          !playerTexture ||
-          !cannonBallTexture ||
-          !chaserTexture ||
-          islandTextures.length !== 9
-        ) {
-          throw new Error('The required game textures were not loaded.')
+        const getTexture = (assetUrl: string) => {
+          const texture = loadedTextures.get(assetUrl)
+
+          if (!texture) {
+            throw new Error(`The required texture was not loaded: ${assetUrl}`)
+          }
+
+          return texture
         }
+        const waterTexture = getTexture(waterTextureUrl)
+        const playerTexture = getTexture(playerShipUrl)
+        const cannonBallTexture = getTexture(cannonBallUrl)
+        const chaserTexture = getTexture(chaserShipUrl)
+        const islandTextures = islandAssetUrls.map(getTexture)
+        const playerHealthFrameTexture = getTexture(playerHealthFrameUrl)
+        const playerHealthGreenTexture = getTexture(playerHealthGreenUrl)
+        const playerHealthAmberTexture = getTexture(playerHealthAmberUrl)
+        const playerHealthRedTexture = getTexture(playerHealthRedUrl)
+        const enemyHealthFrameTexture = getTexture(enemyHealthFrameUrl)
+        const enemyHealthGreenTexture = getTexture(enemyHealthGreenUrl)
+        const enemyHealthRedTexture = getTexture(enemyHealthRedUrl)
 
         application.canvas.setAttribute('aria-hidden', 'true')
         hostElement.appendChild(application.canvas)
@@ -178,9 +244,13 @@ export function GameCanvas() {
         const enemyLayer = new Container()
         const enemySprites = new Map<number, Sprite>()
         const healthBarLayer = new Container()
-        const enemyHealthBars = new Map<number, Graphics>()
+        const enemyHealthBars = new Map<number, HealthBarView>()
         const playerShip = new Sprite(playerTexture)
-        const playerHealthBar = new Graphics()
+        const playerHealthBar = createHealthBar(
+          playerHealthFrameTexture,
+          playerHealthGreenTexture,
+          PLAYER_HEALTH_BAR,
+        )
         playerShip.anchor.set(0.5)
         playerShip.scale.set(0.9)
         world.addChild(
@@ -191,12 +261,26 @@ export function GameCanvas() {
           playerShip,
           healthBarLayer,
         )
-        healthBarLayer.addChild(playerHealthBar)
+        healthBarLayer.addChild(playerHealthBar.container)
         application.stage.addChild(world)
 
         let gameState = createInitialGameState(GAME_CONFIG)
         const keyboardInput = new KeyboardInput(window)
-        const removeTestBridge = installGameTestBridge(() => gameState)
+        const removeTestBridge = installGameTestBridge(
+          () => gameState,
+          (setup) => {
+            gameState = {
+              ...gameState,
+              enemies: [
+                {
+                  id: 1,
+                  type: 'chaser',
+                  ...setup,
+                },
+              ],
+            }
+          },
+        )
         const gameLoop = new GameLoop(
           GAME_CONFIG.loop.fixedStepSeconds,
           GAME_CONFIG.loop.maxFrameDeltaSeconds,
@@ -214,12 +298,20 @@ export function GameCanvas() {
           playerShip.position.set(gameState.player.x, gameState.player.y)
           playerShip.rotation =
             gameState.player.rotation + PLAYER_SPRITE_ROTATION_OFFSET
-          drawHealthBar(
+          const playerHealthFill =
+            gameState.player.health > GAME_CONFIG.player.maxHealth * 0.5
+              ? playerHealthGreenTexture
+              : gameState.player.health > GAME_CONFIG.player.maxHealth * 0.25
+                ? playerHealthAmberTexture
+                : playerHealthRedTexture
+          updateHealthBar(
             playerHealthBar,
             gameState.player.x,
             gameState.player.y,
             gameState.player.health,
             GAME_CONFIG.player.maxHealth,
+            playerHealthFill,
+            PLAYER_HEALTH_BAR,
           )
 
           const activeEnemyIds = new Set(
@@ -234,8 +326,8 @@ export function GameCanvas() {
 
               const healthBar = enemyHealthBars.get(id)
               if (healthBar) {
-                healthBarLayer.removeChild(healthBar)
-                healthBar.destroy()
+                healthBarLayer.removeChild(healthBar.container)
+                healthBar.container.destroy({ children: true })
                 enemyHealthBars.delete(id)
               }
             }
@@ -251,8 +343,12 @@ export function GameCanvas() {
               enemyLayer.addChild(sprite)
               enemySprites.set(enemy.id, sprite)
 
-              const healthBar = new Graphics()
-              healthBarLayer.addChild(healthBar)
+              const healthBar = createHealthBar(
+                enemyHealthFrameTexture,
+                enemyHealthGreenTexture,
+                ENEMY_HEALTH_BAR,
+              )
+              healthBarLayer.addChild(healthBar.container)
               enemyHealthBars.set(enemy.id, healthBar)
             }
 
@@ -262,12 +358,16 @@ export function GameCanvas() {
 
             const healthBar = enemyHealthBars.get(enemy.id)
             if (healthBar) {
-              drawHealthBar(
+              updateHealthBar(
                 healthBar,
                 enemy.x,
                 enemy.y,
                 enemy.health,
                 GAME_CONFIG.chaser.maxHealth,
+                enemy.health > GAME_CONFIG.chaser.maxHealth * 0.5
+                  ? enemyHealthGreenTexture
+                  : enemyHealthRedTexture,
+                ENEMY_HEALTH_BAR,
               )
             }
           }

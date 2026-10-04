@@ -9,10 +9,73 @@ interface CombatPlayerState {
   health: number
 }
 
+interface CombatProjectileState {
+  x: number
+  y: number
+  damage: number
+  owner: 'player' | 'enemy'
+}
+
 export interface CombatResult {
   player: CombatPlayerState
   enemies: EnemyState[]
   score: number
+}
+
+export interface ProjectileCombatResult<
+  Projectile extends CombatProjectileState,
+> {
+  enemies: EnemyState[]
+  projectiles: Projectile[]
+  score: number
+}
+
+export function resolvePlayerProjectileHits<
+  Projectile extends CombatProjectileState,
+>(
+  enemies: EnemyState[],
+  projectiles: Projectile[],
+  score: number,
+  config: GameConfig,
+): ProjectileCombatResult<Projectile> {
+  const updatedEnemies = enemies.map((enemy) => ({ ...enemy }))
+  const survivingProjectiles: Projectile[] = []
+
+  for (const projectile of projectiles) {
+    if (projectile.owner !== 'player') {
+      survivingProjectiles.push(projectile)
+      continue
+    }
+
+    const hitEnemy = updatedEnemies.find(
+      (enemy) =>
+        enemy.health > 0 &&
+        circlesIntersect(
+          projectile.x,
+          projectile.y,
+          config.projectiles.collisionRadius,
+          enemy.x,
+          enemy.y,
+          config.chaser.collisionRadius,
+        ),
+    )
+
+    if (!hitEnemy) {
+      survivingProjectiles.push(projectile)
+      continue
+    }
+
+    hitEnemy.health = Math.max(0, hitEnemy.health - projectile.damage)
+  }
+
+  const survivingEnemies = updatedEnemies.filter((enemy) => enemy.health > 0)
+  const defeatedEnemyCount = updatedEnemies.length - survivingEnemies.length
+
+  return {
+    enemies: survivingEnemies,
+    projectiles: survivingProjectiles,
+    score: score + defeatedEnemyCount,
+  }
 }
 
 export function resolveChaserPlayerCollisions(

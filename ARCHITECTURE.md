@@ -104,9 +104,15 @@ Chaser in the same simulation update, guaranteeing that contact damage happens
 once. The score is preserved because a Chaser that dies by collision awards no
 point.
 
+Player projectiles are removed on their first enemy hit. Damage is applied to a
+copied enemy state, and an enemy whose health reaches zero is removed and awards
+one point. Projectile resolution runs before Chaser contact resolution in the
+same fixed update, so a lethal shot can prevent contact damage.
+
 PixiJS draws health bars above the player and enemies from simulation health.
-The bars never decide damage or entity removal. Player death, projectile damage,
-and match completion remain later milestones.
+The bars use the official frame and fill assets, with a mask clipping the atlas-
+documented fill rectangle to the current health ratio. They never decide damage
+or entity removal. Player death and match completion remain later milestones.
 
 ## Asset strategy
 
@@ -137,8 +143,8 @@ initial suite covers match start, asset completion, a single PixiJS canvas,
 keyboard movement and rotation, arena boundaries, resize stability, and clean
 scene recreation.
 
-Test mode installs a read-only `window.__GAME_TEST__` bridge. Playwright still
-uses real keyboard events and the production movement rules; the bridge only
-returns a copy of the resulting logical state so assertions do not depend on
-fragile pixel comparisons. Cleanup removes the bridge with the rest of the game
-runtime. Vite eliminates it from normal production builds.
+Test mode installs a `window.__GAME_TEST__` bridge. Playwright uses real keyboard
+events and production rules; the bridge returns state copies and can place a
+known Chaser for deterministic combat setup. It does not invoke damage or force
+outcomes. Cleanup removes the bridge with the rest of the game runtime. Vite
+eliminates it from normal production builds.
