@@ -83,3 +83,23 @@ test('moves and fires at the same time with two touch pointers', async ({
   expect(finalState?.player.y).toBeLessThan(initialY - 20)
   expect(finalState?.frontCannonCooldownRemaining).toBeGreaterThan(0)
 })
+
+test('keeps the menu and result actions visible in mobile landscape', async ({
+  page,
+}) => {
+  await page.goto('/')
+
+  await expect(page.getByRole('button', { name: 'Play' })).toBeInViewport()
+  await expect(page.getByRole('button', { name: 'Options' })).toBeInViewport()
+
+  await page.getByRole('button', { name: 'Play' }).click()
+  await page.waitForFunction(() => window.__GAME_TEST__ !== undefined)
+  await page.evaluate(() => window.__GAME_TEST__?.setPlayerHealth(0))
+
+  await expect(
+    page.getByRole('heading', { name: 'Your ship was destroyed!' }),
+  ).toBeInViewport()
+  await expect(page.getByRole('button', { name: 'Play again' })).toBeInViewport()
+  await expect(page.getByRole('button', { name: 'Main menu' })).toBeInViewport()
+  await expect(page.getByLabel('Touch game controls')).toHaveCount(0)
+})

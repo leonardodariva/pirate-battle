@@ -91,6 +91,7 @@ interface GameCanvasProps {
   config: GameConfig
   onStateChange?: (state: GameUiState) => void
   pauseRequestId?: number
+  touchControlsEnabled?: boolean
 }
 
 interface PauseControls {
@@ -151,6 +152,7 @@ export function GameCanvas({
   config,
   onStateChange,
   pauseRequestId = 0,
+  touchControlsEnabled = true,
 }: GameCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null)
   const onStateChangeRef = useRef(onStateChange)
@@ -699,7 +701,9 @@ export function GameCanvas({
         </section>
       )}
 
-      {loadState.status === 'ready' && pauseReason === null && (
+      {loadState.status === 'ready' &&
+        pauseReason === null &&
+        touchControlsEnabled && (
         <TouchControls
           onPress={(action, source) =>
             inputStateRef.current?.press(action, source)

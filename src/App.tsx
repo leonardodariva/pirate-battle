@@ -95,6 +95,7 @@ function App() {
             key={matchKey}
             config={matchConfig}
             pauseRequestId={pauseRequestId}
+            touchControlsEnabled={gameUiState?.status !== 'ended'}
             onStateChange={setGameUiState}
           />
 

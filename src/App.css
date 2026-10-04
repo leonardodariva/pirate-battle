@@ -551,6 +551,50 @@ kbd {
 }
 
 @media (max-height: 600px) and (orientation: landscape) {
+  .menu-screen,
+  .options-screen {
+    height: 100svh;
+    min-height: 0;
+    padding: 0.35rem;
+  }
+
+  .menu-card {
+    width: min(92vw, 76svh, 24rem);
+    padding: 1.4rem 1.6rem;
+  }
+
+  .jungle-logo {
+    width: 34%;
+    margin-bottom: 0;
+  }
+
+  .menu-title {
+    width: 94%;
+    margin-bottom: 0.1rem;
+  }
+
+  .menu-tagline {
+    margin-bottom: 0.4rem;
+    font-size: 0.55rem;
+  }
+
+  .menu-card .primary-button {
+    width: min(74%, 12rem);
+    font-size: 1rem;
+  }
+
+  .menu-options-button {
+    min-height: 2rem;
+    margin-top: 0.25rem;
+    padding: 0.3rem 0.65rem;
+    font-size: 0.75rem;
+  }
+
+  .menu-copy {
+    margin-top: 0.35rem;
+    font-size: 0.58rem;
+  }
+
   .game-screen {
     grid-template-rows: auto minmax(0, 1fr);
     height: 100svh;
@@ -586,5 +630,69 @@ kbd {
   .game-canvas-shell,
   .game-canvas {
     min-height: 0;
+  }
+
+  .result-dialog,
+  .pause-dialog {
+    width: min(86%, 28rem);
+    max-height: calc(100% - 0.75rem);
+    overflow-y: auto;
+    padding: 0.7rem 1rem;
+  }
+
+  .result-dialog .eyebrow,
+  .pause-dialog .eyebrow {
+    margin-bottom: 0.2rem;
+    font-size: 0.6rem;
+  }
+
+  .result-dialog h2,
+  .pause-dialog h2 {
+    margin-bottom: 0.55rem;
+    font-size: 1.55rem;
+  }
+
+  .pause-dialog p:not(.eyebrow, .pause-hint) {
+    margin-bottom: 0.65rem;
+    font-size: 0.78rem;
+  }
+
+  .pause-hint {
+    margin-top: 0.35rem;
+    font-size: 0.65rem;
+  }
+
+  .result-stats {
+    gap: 0.35rem;
+    margin-bottom: 0.55rem;
+  }
+
+  .result-stats div {
+    padding: 0.35rem;
+  }
+
+  .result-stats dt {
+    font-size: 0.62rem;
+  }
+
+  .result-stats dd {
+    margin-top: 0.1rem;
+    font-size: 0.8rem;
+  }
+
+  .result-actions {
+    gap: 0.25rem;
+  }
+
+  .result-actions .primary-button,
+  .pause-dialog .primary-button {
+    width: min(70%, 13rem);
+    font-size: 1rem;
+  }
+
+  .result-actions .secondary-button {
+    min-height: 2rem;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.75rem;
   }
 }
