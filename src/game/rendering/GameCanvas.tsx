@@ -1,9 +1,4 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  type PointerEvent as ReactPointerEvent,
-} from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Application,
   Assets,
@@ -44,7 +39,8 @@ import {
   updateGameState,
 } from '../core/GameState'
 import { KeyboardInput } from '../input/KeyboardInput'
-import { InputState, type InputAction } from '../input/InputState'
+import { InputState } from '../input/InputState'
+import { TouchControls } from '../input/TouchControls'
 import { getEnemyMaxHealth } from '../systems/EnemySystem'
 import { installGameTestBridge } from '../testing/GameTestBridge'
 
@@ -658,46 +654,6 @@ export function GameCanvas({
     }
   }, [config, loadAttempt])
 
-  const pressTouchAction = (
-    action: InputAction,
-    event: ReactPointerEvent<HTMLButtonElement>,
-  ) => {
-    event.preventDefault()
-    try {
-      event.currentTarget.setPointerCapture(event.pointerId)
-    } catch {
-      // Synthetic pointer events used by browser tests have no native pointer
-      // to capture. Real touch pointers still use capture normally.
-    }
-    inputStateRef.current?.press(action, `pointer:${event.pointerId}`)
-  }
-
-  const releaseTouchAction = (
-    action: InputAction,
-    event: ReactPointerEvent<HTMLButtonElement>,
-  ) => {
-    event.preventDefault()
-    inputStateRef.current?.release(action, `pointer:${event.pointerId}`)
-  }
-
-  const touchButton = (
-    action: InputAction,
-    label: string,
-    shortLabel: string,
-  ) => (
-    <button
-      type="button"
-      className="touch-control"
-      aria-label={label}
-      onPointerDown={(event) => pressTouchAction(action, event)}
-      onPointerUp={(event) => releaseTouchAction(action, event)}
-      onPointerCancel={(event) => releaseTouchAction(action, event)}
-      onLostPointerCapture={(event) => releaseTouchAction(action, event)}
-    >
-      {shortLabel}
-    </button>
-  )
-
   return (
     <div className="game-canvas-shell">
       <div ref={hostRef} className="game-canvas" />
@@ -744,18 +700,14 @@ export function GameCanvas({
       )}
 
       {loadState.status === 'ready' && pauseReason === null && (
-        <div className="touch-controls" aria-label="Touch game controls">
-          <div className="touch-control-group touch-movement-controls">
-            {touchButton('turnLeft', 'Rotate left', '↶')}
-            {touchButton('forward', 'Move forward', '↑')}
-            {touchButton('turnRight', 'Rotate right', '↷')}
-          </div>
-          <div className="touch-control-group touch-weapon-controls">
-            {touchButton('fireLeftBroadside', 'Fire left broadside', 'L')}
-            {touchButton('fireFront', 'Fire front cannon', '●')}
-            {touchButton('fireRightBroadside', 'Fire right broadside', 'R')}
-          </div>
-        </div>
+        <TouchControls
+          onPress={(action, source) =>
+            inputStateRef.current?.press(action, source)
+          }
+          onRelease={(action, source) =>
+            inputStateRef.current?.release(action, source)
+          }
+        />
       )}
     </div>
   )
