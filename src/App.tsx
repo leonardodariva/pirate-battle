@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import jungleGamingLogoUrl from '../assets/logo_jungle_gaming.svg'
 import menuTitleUrl from '../assets/png/default/ui/menu/title_pirate_battle.png'
 import { GameCanvas } from './game/rendering/GameCanvas'
 import './App.css'
@@ -40,7 +41,11 @@ function App() {
   return (
     <main className="menu-screen">
       <section className="menu-card" aria-labelledby="game-title">
-        <p className="eyebrow">Jungle Gaming Challenge</p>
+        <img
+          className="jungle-logo"
+          src={jungleGamingLogoUrl}
+          alt="Jungle Gaming"
+        />
         <h1 id="game-title" className="visually-hidden">
           Pirate Battle
         </h1>

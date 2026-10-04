@@ -22,17 +22,24 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 12% 13% 10%;
+  padding: clamp(2.5rem, 6vw, 4rem) clamp(2rem, 5vw, 3.5rem);
   background: url('../assets/png/default/ui/menu/panel_menu.png') center / 100% 100%
     no-repeat;
   filter: drop-shadow(0 1.5rem 2rem rgba(0, 0, 0, 0.55));
   text-align: center;
 }
 
+.jungle-logo {
+  width: 42%;
+  flex-shrink: 0;
+  margin: 0 0 0.35rem;
+}
+
 .menu-title {
-  width: 112%;
+  width: 128%;
   max-width: none;
-  margin: 0 0 0.4rem;
+  flex-shrink: 0;
+  margin: 0 0 0.5rem;
 }
 
 .eyebrow {
@@ -88,6 +95,7 @@ button:focus-visible {
 .primary-button {
   width: min(100%, 16rem);
   aspect-ratio: 256 / 88;
+  flex-shrink: 0;
   border: 0;
   border-radius: 0;
   background: url('../assets/png/default/ui/menu/button_primary_normal.png') center /
