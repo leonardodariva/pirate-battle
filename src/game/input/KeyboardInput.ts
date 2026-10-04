@@ -1,66 +1,40 @@
-import type { PlayerInput } from '../core/GameState'
+import { type InputAction, InputState } from './InputState'
 
-const GAMEPLAY_KEYS = new Set([
-  'KeyW',
-  'KeyA',
-  'KeyD',
-  'ArrowUp',
-  'ArrowLeft',
-  'ArrowRight',
-  'Space',
-  'KeyQ',
-  'KeyE',
-])
+const KEY_ACTIONS: Readonly<Record<string, InputAction>> = {
+  KeyW: 'forward',
+  ArrowUp: 'forward',
+  KeyA: 'turnLeft',
+  ArrowLeft: 'turnLeft',
+  KeyD: 'turnRight',
+  ArrowRight: 'turnRight',
+  Space: 'fireFront',
+  KeyQ: 'fireLeftBroadside',
+  KeyE: 'fireRightBroadside',
+}
 
 export class KeyboardInput {
-  private readonly pressedKeys = new Set<string>()
   private readonly target: Window
+  private readonly inputState: InputState
   private readonly onPauseRequested: () => void
-  private fireFrontQueued = false
-  private fireLeftBroadsideQueued = false
-  private fireRightBroadsideQueued = false
 
-  constructor(target: Window, onPauseRequested: () => void = () => {}) {
+  constructor(
+    target: Window,
+    inputState: InputState,
+    onPauseRequested: () => void = () => {},
+  ) {
     this.target = target
+    this.inputState = inputState
     this.onPauseRequested = onPauseRequested
     target.addEventListener('keydown', this.handleKeyDown)
     target.addEventListener('keyup', this.handleKeyUp)
-    target.addEventListener('blur', this.clear)
-  }
-
-  read(): PlayerInput {
-    const fireFront = this.fireFrontQueued
-    const fireLeftBroadside = this.fireLeftBroadsideQueued
-    const fireRightBroadside = this.fireRightBroadsideQueued
-    this.fireFrontQueued = false
-    this.fireLeftBroadsideQueued = false
-    this.fireRightBroadsideQueued = false
-
-    return {
-      forward:
-        this.pressedKeys.has('KeyW') || this.pressedKeys.has('ArrowUp'),
-      turnLeft:
-        this.pressedKeys.has('KeyA') || this.pressedKeys.has('ArrowLeft'),
-      turnRight:
-        this.pressedKeys.has('KeyD') || this.pressedKeys.has('ArrowRight'),
-      fireFront,
-      fireLeftBroadside,
-      fireRightBroadside,
-    }
+    target.addEventListener('blur', this.handleBlur)
   }
 
   destroy() {
     this.target.removeEventListener('keydown', this.handleKeyDown)
     this.target.removeEventListener('keyup', this.handleKeyUp)
-    this.target.removeEventListener('blur', this.clear)
-    this.clear()
-  }
-
-  readonly clear = () => {
-    this.pressedKeys.clear()
-    this.fireFrontQueued = false
-    this.fireLeftBroadsideQueued = false
-    this.fireRightBroadsideQueued = false
+    this.target.removeEventListener('blur', this.handleBlur)
+    this.inputState.clear()
   }
 
   private readonly handleKeyDown = (event: KeyboardEvent) => {
@@ -73,30 +47,24 @@ export class KeyboardInput {
       return
     }
 
-    if (GAMEPLAY_KEYS.has(event.code)) {
+    const action = KEY_ACTIONS[event.code]
+
+    if (action) {
       event.preventDefault()
-
-      if (event.code === 'Space' && !this.pressedKeys.has(event.code)) {
-        this.fireFrontQueued = true
-      }
-
-      if (event.code === 'KeyQ' && !this.pressedKeys.has(event.code)) {
-        this.fireLeftBroadsideQueued = true
-      }
-
-      if (event.code === 'KeyE' && !this.pressedKeys.has(event.code)) {
-        this.fireRightBroadsideQueued = true
-      }
-
-      this.pressedKeys.add(event.code)
+      this.inputState.press(action, `keyboard:${event.code}`)
     }
   }
 
   private readonly handleKeyUp = (event: KeyboardEvent) => {
-    if (GAMEPLAY_KEYS.has(event.code)) {
+    const action = KEY_ACTIONS[event.code]
+
+    if (action) {
       event.preventDefault()
-      this.pressedKeys.delete(event.code)
+      this.inputState.release(action, `keyboard:${event.code}`)
     }
   }
 
+  private readonly handleBlur = () => {
+    this.inputState.clear()
+  }
 }

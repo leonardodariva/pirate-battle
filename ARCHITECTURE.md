@@ -76,14 +76,22 @@ letterboxed instead of stretching or cropping the arena.
 
 ## Input
 
-`KeyboardInput` stores currently pressed gameplay keys and exposes a small input
-snapshot (`forward`, `turnLeft`, and `turnRight`). It also queues the edge of a
-`Space`, `Q`, or `E` press until one simulation step consumes it. This prevents
-a held key from becoming a new shot on every fixed update. Input does not mutate
-game state.
-This makes simultaneous input possible and lets future touch controls produce
-the same snapshot without changing movement logic. Key state is cleared on
-window blur and all listeners are removed when gameplay unmounts.
+`InputState` owns the current input snapshot while input adapters only translate
+their events into actions. `KeyboardInput` maps keyboard events and the React
+touch controls map Pointer Events to the same actions. Each press carries a
+source id, so a keyboard key and a touch pointer can hold the same action without
+one source accidentally releasing the other.
+
+Movement and rotation remain active while held. `Space`, `Q`, `E`, and their
+touch equivalents queue only the edge of a press until one simulation step
+consumes it. This prevents a held button from becoming a new shot on every fixed
+update. Multiple pointer ids allow movement and firing with different fingers at
+the same time. Input never mutates game state directly; it only produces the
+snapshot consumed by `updateGameState`.
+
+Held and queued input is cleared on window blur, pause, and runtime teardown.
+Keyboard listeners are removed and active touch access is disconnected when the
+gameplay component unmounts.
 
 ## Current collision boundary
 

@@ -1,4 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from 'react'
 import {
   Application,
   Assets,
@@ -39,6 +44,7 @@ import {
   updateGameState,
 } from '../core/GameState'
 import { KeyboardInput } from '../input/KeyboardInput'
+import { InputState, type InputAction } from '../input/InputState'
 import { getEnemyMaxHealth } from '../systems/EnemySystem'
 import { installGameTestBridge } from '../testing/GameTestBridge'
 
@@ -153,6 +159,7 @@ export function GameCanvas({
   const hostRef = useRef<HTMLDivElement>(null)
   const onStateChangeRef = useRef(onStateChange)
   const pauseControlsRef = useRef<PauseControls>(EMPTY_PAUSE_CONTROLS)
+  const inputStateRef = useRef<InputState | null>(null)
   const [loadState, setLoadState] = useState<LoadState>({
     status: 'loading',
     progress: 0,
@@ -332,9 +339,13 @@ export function GameCanvas({
           })
         }
         let requestPauseToggle = () => {}
-        const keyboardInput = new KeyboardInput(window, () =>
-          requestPauseToggle(),
+        const inputState = new InputState()
+        const keyboardInput = new KeyboardInput(
+          window,
+          inputState,
+          () => requestPauseToggle(),
         )
+        inputStateRef.current = inputState
         const removeTestBridge = installGameTestBridge(
           () => gameState,
           (setup) => {
@@ -409,7 +420,7 @@ export function GameCanvas({
             const previousStatus = gameState.status
             gameState = updateGameState(
               gameState,
-              keyboardInput.read(),
+              inputState.read(),
               fixedStepSeconds,
               config,
             )
@@ -433,7 +444,7 @@ export function GameCanvas({
 
           gameState = pausedState
           gameLoop.reset()
-          keyboardInput.clear()
+          inputState.clear()
           setPauseReason(reason)
           publishUiState()
         }
@@ -446,7 +457,7 @@ export function GameCanvas({
 
           gameState = resumedState
           gameLoop.reset()
-          keyboardInput.clear()
+          inputState.clear()
           setPauseReason(null)
           publishUiState()
         }
@@ -611,6 +622,9 @@ export function GameCanvas({
           application.ticker.remove(handleTick)
           gameLoop.reset()
           keyboardInput.destroy()
+          if (inputStateRef.current === inputState) {
+            inputStateRef.current = null
+          }
           window.removeEventListener('blur', handleWindowBlur)
           document.removeEventListener(
             'visibilitychange',
@@ -643,6 +657,46 @@ export function GameCanvas({
       destroyApplication()
     }
   }, [config, loadAttempt])
+
+  const pressTouchAction = (
+    action: InputAction,
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => {
+    event.preventDefault()
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId)
+    } catch {
+      // Synthetic pointer events used by browser tests have no native pointer
+      // to capture. Real touch pointers still use capture normally.
+    }
+    inputStateRef.current?.press(action, `pointer:${event.pointerId}`)
+  }
+
+  const releaseTouchAction = (
+    action: InputAction,
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => {
+    event.preventDefault()
+    inputStateRef.current?.release(action, `pointer:${event.pointerId}`)
+  }
+
+  const touchButton = (
+    action: InputAction,
+    label: string,
+    shortLabel: string,
+  ) => (
+    <button
+      type="button"
+      className="touch-control"
+      aria-label={label}
+      onPointerDown={(event) => pressTouchAction(action, event)}
+      onPointerUp={(event) => releaseTouchAction(action, event)}
+      onPointerCancel={(event) => releaseTouchAction(action, event)}
+      onLostPointerCapture={(event) => releaseTouchAction(action, event)}
+    >
+      {shortLabel}
+    </button>
+  )
 
   return (
     <div className="game-canvas-shell">
@@ -687,6 +741,21 @@ export function GameCanvas({
           </button>
           <p className="pause-hint">Press Esc to continue</p>
         </section>
+      )}
+
+      {loadState.status === 'ready' && pauseReason === null && (
+        <div className="touch-controls" aria-label="Touch game controls">
+          <div className="touch-control-group touch-movement-controls">
+            {touchButton('turnLeft', 'Rotate left', '↶')}
+            {touchButton('forward', 'Move forward', '↑')}
+            {touchButton('turnRight', 'Rotate right', '↷')}
+          </div>
+          <div className="touch-control-group touch-weapon-controls">
+            {touchButton('fireLeftBroadside', 'Fire left broadside', 'L')}
+            {touchButton('fireFront', 'Fire front cannon', '●')}
+            {touchButton('fireRightBroadside', 'Fire right broadside', 'R')}
+          </div>
+        </div>
       )}
     </div>
   )

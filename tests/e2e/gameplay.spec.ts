@@ -29,7 +29,7 @@ test('starts a match and loads one PixiJS canvas', async ({ page }) => {
   await page.waitForFunction(() => window.__GAME_TEST__ !== undefined)
 
   await expect(page.locator('canvas')).toHaveCount(1)
-  await expect(page.getByLabel('Game controls')).toBeVisible()
+  await expect(page.getByLabel('Game controls', { exact: true })).toBeVisible()
 
   const state = await readGameState(page)
   expect(state.player.x).toBe(640)
