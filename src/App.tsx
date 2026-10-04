@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import menuTitleUrl from '../assets/png/default/ui/menu/title_pirate_battle.png'
 import { GameCanvas } from './game/rendering/GameCanvas'
 import './App.css'
 
@@ -40,14 +41,20 @@ function App() {
     <main className="menu-screen">
       <section className="menu-card" aria-labelledby="game-title">
         <p className="eyebrow">Jungle Gaming Challenge</p>
-        <h1 id="game-title">Pirate Battle</h1>
-        <p className="menu-copy">
-          A top-down naval shooter. This first milestone validates the React and
-          PixiJS foundation.
-        </p>
+        <h1 id="game-title" className="visually-hidden">
+          Pirate Battle
+        </h1>
+        <img
+          className="menu-title"
+          src={menuTitleUrl}
+          alt=""
+          aria-hidden="true"
+        />
+        <p className="menu-tagline">Set sail. Take command.</p>
         <button className="primary-button" onClick={() => setIsPlaying(true)}>
           Play
         </button>
+        <p className="menu-copy">Navigate the islands. Survive the battle.</p>
       </section>
     </main>
   )
