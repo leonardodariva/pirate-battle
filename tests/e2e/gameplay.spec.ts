@@ -37,6 +37,23 @@ test('starts a match and loads one PixiJS canvas', async ({ page }) => {
   expect(state.player.rotation).toBe(0)
 })
 
+test('opens the controls guide and returns to the menu', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Controls' }).click()
+
+  await expect(
+    page.getByRole('heading', { name: 'Controls' }),
+  ).toBeVisible()
+  await expect(page.getByText('Move forward', { exact: true })).toBeVisible()
+  await expect(page.getByText('Joystick direction')).toBeVisible()
+  await expect(
+    page.getByText('Use the joystick and a weapon button'),
+  ).toBeVisible()
+
+  await page.getByRole('button', { name: 'Back' }).click()
+  await expect(page.getByRole('button', { name: 'Play' })).toBeVisible()
+})
+
 test('validates, persists, and snapshots gameplay options', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('button', { name: 'Options' }).click()

@@ -6,6 +6,12 @@ React owns navigation and semantic interface elements. PixiJS owns the arena
 canvas and all objects rendered inside it. Per-frame simulation state will not
 be stored in React.
 
+The menu, Options, and Controls guide are regular React screens. The Controls
+guide documents the same keyboard and touch mappings used by the input adapters
+and uses the provided Jungle Gaming control icons. Keeping instructions outside
+the PixiJS canvas preserves semantic headings, lists, keyboard navigation, and
+responsive layout without coupling documentation UI to the simulation.
+
 `GameCanvas` creates a PixiJS `Application` when mounted and destroys it when
 unmounted. Its disposal guard handles React Strict Mode's development lifecycle
 without leaving a second canvas or renderer active.

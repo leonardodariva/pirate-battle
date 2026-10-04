@@ -11,13 +11,14 @@ import {
   type GameUiState,
 } from './game/rendering/GameCanvas'
 import { OptionsScreen } from './features/options/OptionsScreen'
+import { ControlsScreen } from './features/controls/ControlsScreen'
 import {
   loadGameOptions,
   saveGameOptions,
 } from './storage/gameOptionsStorage'
 import './App.css'
 
-type AppScreen = 'menu' | 'options' | 'game'
+type AppScreen = 'menu' | 'options' | 'controls' | 'game'
 
 function App() {
   const [screen, setScreen] = useState<AppScreen>('menu')
@@ -156,6 +157,10 @@ function App() {
     )
   }
 
+  if (screen === 'controls') {
+    return <ControlsScreen onBack={() => setScreen('menu')} />
+  }
+
   return (
     <main className="menu-screen">
       <section className="menu-card" aria-labelledby="game-title">
@@ -177,12 +182,20 @@ function App() {
         <button className="primary-button" onClick={startMatch}>
           Play
         </button>
-        <button
-          className="secondary-button menu-options-button"
-          onClick={() => setScreen('options')}
-        >
-          Options
-        </button>
+        <div className="menu-secondary-actions">
+          <button
+            className="secondary-button menu-options-button"
+            onClick={() => setScreen('options')}
+          >
+            Options
+          </button>
+          <button
+            className="secondary-button menu-options-button"
+            onClick={() => setScreen('controls')}
+          >
+            Controls
+          </button>
+        </div>
         <p className="menu-copy">Navigate. Explore. Survive.</p>
       </section>
     </main>
