@@ -31,7 +31,12 @@ describe('SpawnSystem', () => {
       GAME_CONFIG,
     )
     expect(secondSpawn.enemies).toHaveLength(2)
-    expect(secondSpawn.enemies[1]).toMatchObject({ id: 2, type: 'shooter' })
+    expect(secondSpawn.enemies[1]).toMatchObject({
+      id: 2,
+      type: 'shooter',
+      x: 1_160,
+      y: 120,
+    })
   })
 
   it('uses a repeatable two-Chaser, one-Shooter weighted cycle after both guaranteed spawns', () => {

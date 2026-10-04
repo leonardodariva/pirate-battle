@@ -56,6 +56,7 @@ export interface GameConfig {
   spawn: {
     intervalSeconds: number
     minimumDistanceFromPlayer: number
+    minimumDistanceFromEnemies: number
     positions: ReadonlyArray<{
       x: number
       y: number
@@ -129,6 +130,7 @@ export const GAME_CONFIG: GameConfig = {
   spawn: {
     intervalSeconds: 5,
     minimumDistanceFromPlayer: 240,
+    minimumDistanceFromEnemies: 100,
     positions: [
       { x: 120, y: 120 },
       { x: 1_160, y: 120 },

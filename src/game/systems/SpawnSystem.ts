@@ -95,7 +95,7 @@ function spawnEnemy(
       ? config.chaser.collisionRadius
       : config.shooter.collisionRadius
   const position = config.spawn.positions.find((candidate) =>
-    isValidSpawnPosition(candidate, radius, player, config),
+    isValidSpawnPosition(candidate, radius, player, enemies, config),
   )
 
   if (!position) {
@@ -136,6 +136,7 @@ function isValidSpawnPosition(
   candidate: PlayerPosition,
   radius: number,
   player: PlayerPosition,
+  enemies: EnemyState[],
   config: GameConfig,
 ) {
   const insideArena =
@@ -154,6 +155,16 @@ function isValidSpawnPosition(
       insetRectangle(island, island.collisionInset),
     ),
   )
+  const farEnoughFromEnemies = enemies.every(
+    (enemy) =>
+      Math.hypot(candidate.x - enemy.x, candidate.y - enemy.y) >=
+      config.spawn.minimumDistanceFromEnemies,
+  )
 
-  return insideArena && farEnoughFromPlayer && !intersectsIsland
+  return (
+    insideArena &&
+    farEnoughFromPlayer &&
+    farEnoughFromEnemies &&
+    !intersectsIsland
+  )
 }

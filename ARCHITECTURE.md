@@ -117,8 +117,9 @@ which keeps tests and bug reports reproducible.
 
 Every candidate comes from a configured list around the arena and is accepted
 only if its collision circle is inside the arena, outside island collision
-bounds, and at least the configured distance from the player. The state stores
-the spawn timer, the number of enemies already spawned, and the next stable id.
+bounds, far enough from the player, and not too close to another active enemy.
+The state stores the spawn timer, the number of enemies already spawned, and
+the next stable id.
 It lives in `GameState`, rather than PixiJS, so rendering cannot create an
 invalid enemy. A future seeded random selection can replace the candidate order
 if a larger arena needs more variety.
