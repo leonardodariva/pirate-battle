@@ -1,22 +1,27 @@
-import type { InputAction } from './InputState'
+const JOYSTICK_DEAD_ZONE = 0.18
 
-const JOYSTICK_DEAD_ZONE = 0.25
+export interface JoystickMovement {
+  forwardAmount: number
+  turnAmount: number
+}
 
-export function getJoystickActions(
+export function getJoystickMovement(
   normalizedX: number,
   normalizedY: number,
-): InputAction[] {
-  const actions: InputAction[] = []
+): JoystickMovement {
+  return {
+    forwardAmount: applyDeadZone(-normalizedY),
+    turnAmount:
+      Math.sign(normalizedX) * applyDeadZone(Math.abs(normalizedX)),
+  }
+}
 
-  if (normalizedY < -JOYSTICK_DEAD_ZONE) {
-    actions.push('forward')
+function applyDeadZone(value: number) {
+  const clampedValue = Math.min(1, Math.max(0, value))
+
+  if (clampedValue <= JOYSTICK_DEAD_ZONE) {
+    return 0
   }
 
-  if (normalizedX < -JOYSTICK_DEAD_ZONE) {
-    actions.push('turnLeft')
-  } else if (normalizedX > JOYSTICK_DEAD_ZONE) {
-    actions.push('turnRight')
-  }
-
-  return actions
+  return (clampedValue - JOYSTICK_DEAD_ZONE) / (1 - JOYSTICK_DEAD_ZONE)
 }

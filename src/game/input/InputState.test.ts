@@ -41,9 +41,30 @@ describe('InputState', () => {
       forward: false,
       turnLeft: false,
       turnRight: false,
+      forwardAmount: 0,
+      turnAmount: 0,
       fireFront: false,
       fireLeftBroadside: false,
       fireRightBroadside: false,
+    })
+  })
+
+  it('preserves proportional movement from an analog source', () => {
+    const input = new InputState()
+    input.setAnalogMovement('pointer:1', 0.45, -0.6)
+
+    expect(input.read()).toMatchObject({
+      forward: true,
+      turnLeft: true,
+      turnRight: false,
+      forwardAmount: 0.45,
+      turnAmount: -0.6,
+    })
+
+    input.clearAnalogMovement('pointer:1')
+    expect(input.read()).toMatchObject({
+      forwardAmount: 0,
+      turnAmount: 0,
     })
   })
 })

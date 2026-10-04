@@ -35,6 +35,22 @@ describe('updateGameState', () => {
     )
   })
 
+  it('scales movement speed using analog input strength', () => {
+    const configWithoutIslands = { ...GAME_CONFIG, islands: [] }
+    const state = createInitialGameState(configWithoutIslands)
+
+    const nextState = updateGameState(
+      state,
+      { ...NO_INPUT, forwardAmount: 0.5 },
+      0.5,
+      configWithoutIslands,
+    )
+
+    expect(nextState.player.y).toBe(
+      state.player.y - configWithoutIslands.player.movementSpeed * 0.25,
+    )
+  })
+
   it('rotates right using radians per second', () => {
     const state = createInitialGameState(GAME_CONFIG)
 

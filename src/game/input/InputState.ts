@@ -1,6 +1,17 @@
 import type { PlayerInput } from '../core/GameState'
 
-export type InputAction = keyof PlayerInput
+export type InputAction =
+  | 'forward'
+  | 'turnLeft'
+  | 'turnRight'
+  | 'fireFront'
+  | 'fireLeftBroadside'
+  | 'fireRightBroadside'
+
+interface AnalogMovement {
+  forwardAmount: number
+  turnAmount: number
+}
 
 const FIRE_ACTIONS = new Set<InputAction>([
   'fireFront',
@@ -11,6 +22,7 @@ const FIRE_ACTIONS = new Set<InputAction>([
 export class InputState {
   private readonly activeSources = new Map<InputAction, Set<string>>()
   private readonly queuedActions = new Set<InputAction>()
+  private readonly analogMovementBySource = new Map<string, AnalogMovement>()
 
   press(action: InputAction, source: string) {
     const sources = this.activeSources.get(action) ?? new Set<string>()
@@ -33,11 +45,41 @@ export class InputState {
     }
   }
 
+  setAnalogMovement(
+    source: string,
+    forwardAmount: number,
+    turnAmount: number,
+  ) {
+    this.analogMovementBySource.set(source, {
+      forwardAmount: clamp(forwardAmount, 0, 1),
+      turnAmount: clamp(turnAmount, -1, 1),
+    })
+  }
+
+  clearAnalogMovement(source: string) {
+    this.analogMovementBySource.delete(source)
+  }
+
   read(): PlayerInput {
-    const input = {
-      forward: this.isActive('forward'),
-      turnLeft: this.isActive('turnLeft'),
-      turnRight: this.isActive('turnRight'),
+    const digitalForward = this.isActive('forward')
+    const digitalTurn =
+      Number(this.isActive('turnRight')) - Number(this.isActive('turnLeft'))
+    let analogForward = 0
+    let analogTurn = 0
+
+    for (const movement of this.analogMovementBySource.values()) {
+      analogForward = Math.max(analogForward, movement.forwardAmount)
+      analogTurn = clamp(analogTurn + movement.turnAmount, -1, 1)
+    }
+
+    const forwardAmount = Math.max(Number(digitalForward), analogForward)
+    const turnAmount = digitalTurn === 0 ? analogTurn : digitalTurn
+    const input: PlayerInput = {
+      forward: forwardAmount > 0,
+      turnLeft: turnAmount < 0,
+      turnRight: turnAmount > 0,
+      forwardAmount,
+      turnAmount,
       fireFront: this.queuedActions.has('fireFront'),
       fireLeftBroadside: this.queuedActions.has('fireLeftBroadside'),
       fireRightBroadside: this.queuedActions.has('fireRightBroadside'),
@@ -50,9 +92,14 @@ export class InputState {
   clear() {
     this.activeSources.clear()
     this.queuedActions.clear()
+    this.analogMovementBySource.clear()
   }
 
   private isActive(action: InputAction) {
     return (this.activeSources.get(action)?.size ?? 0) > 0
   }
+}
+
+function clamp(value: number, minimum: number, maximum: number) {
+  return Math.min(maximum, Math.max(minimum, value))
 }

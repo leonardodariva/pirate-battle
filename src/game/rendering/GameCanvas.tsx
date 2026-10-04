@@ -711,6 +711,16 @@ export function GameCanvas({
           onRelease={(action, source) =>
             inputStateRef.current?.release(action, source)
           }
+          onAnalogMovement={(source, forwardAmount, turnAmount) =>
+            inputStateRef.current?.setAnalogMovement(
+              source,
+              forwardAmount,
+              turnAmount,
+            )
+          }
+          onAnalogMovementEnd={(source) =>
+            inputStateRef.current?.clearAnalogMovement(source)
+          }
         />
       )}
     </div>

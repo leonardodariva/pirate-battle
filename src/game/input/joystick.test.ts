@@ -1,28 +1,31 @@
 import { describe, expect, it } from 'vitest'
-import { getJoystickActions } from './joystick'
+import { getJoystickMovement } from './joystick'
 
-describe('getJoystickActions', () => {
+describe('getJoystickMovement', () => {
   it('does nothing inside the central dead zone', () => {
-    expect(getJoystickActions(0.1, -0.1)).toEqual([])
+    expect(getJoystickMovement(0.1, -0.1)).toEqual({
+      forwardAmount: 0,
+      turnAmount: 0,
+    })
   })
 
-  it('moves forward when the stick is pushed up', () => {
-    expect(getJoystickActions(0, -0.8)).toEqual(['forward'])
+  it('reaches full speed when pushed to the edge', () => {
+    expect(getJoystickMovement(0, -1)).toEqual({
+      forwardAmount: 1,
+      turnAmount: 0,
+    })
   })
 
-  it('combines forward movement and rotation on a diagonal', () => {
-    expect(getJoystickActions(-0.7, -0.7)).toEqual([
-      'forward',
-      'turnLeft',
-    ])
-    expect(getJoystickActions(0.7, -0.7)).toEqual([
-      'forward',
-      'turnRight',
-    ])
+  it('combines proportional movement and rotation on a diagonal', () => {
+    const movement = getJoystickMovement(0.7, -0.7)
+
+    expect(movement.forwardAmount).toBeGreaterThan(0.6)
+    expect(movement.forwardAmount).toBeLessThan(0.7)
+    expect(movement.turnAmount).toBeCloseTo(movement.forwardAmount)
   })
 
-  it('allows rotation without forward movement', () => {
-    expect(getJoystickActions(-0.8, 0)).toEqual(['turnLeft'])
-    expect(getJoystickActions(0.8, 0)).toEqual(['turnRight'])
+  it('preserves the direction of left and right rotation', () => {
+    expect(getJoystickMovement(-1, 0).turnAmount).toBe(-1)
+    expect(getJoystickMovement(1, 0).turnAmount).toBe(1)
   })
 })

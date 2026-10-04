@@ -10,11 +10,17 @@ import fireFrontIconUrl from '../../../assets/png/default/ui/controls/icon_fire_
 import fireLeftIconUrl from '../../../assets/png/default/ui/controls/icon_fire_left.png'
 import fireRightIconUrl from '../../../assets/png/default/ui/controls/icon_fire_right.png'
 import type { InputAction } from './InputState'
-import { getJoystickActions } from './joystick'
+import { getJoystickMovement } from './joystick'
 
 interface TouchControlsProps {
   onPress: (action: InputAction, source: string) => void
   onRelease: (action: InputAction, source: string) => void
+  onAnalogMovement: (
+    source: string,
+    forwardAmount: number,
+    turnAmount: number,
+  ) => void
+  onAnalogMovementEnd: (source: string) => void
 }
 
 interface StickPosition {
@@ -27,36 +33,15 @@ const CENTERED_STICK: StickPosition = { x: 0, y: 0 }
 export function TouchControls({
   onPress,
   onRelease,
+  onAnalogMovement,
+  onAnalogMovementEnd,
 }: TouchControlsProps) {
   const joystickRef = useRef<HTMLDivElement>(null)
   const activePointerIdRef = useRef<number | null>(null)
-  const activeActionsRef = useRef(new Set<InputAction>())
   const [stickPosition, setStickPosition] =
     useState<StickPosition>(CENTERED_STICK)
 
   const sourceFor = (pointerId: number) => `pointer:${pointerId}`
-
-  const synchronizeJoystickActions = (
-    pointerId: number,
-    nextActions: InputAction[],
-  ) => {
-    const source = sourceFor(pointerId)
-    const nextActionSet = new Set(nextActions)
-
-    for (const action of activeActionsRef.current) {
-      if (!nextActionSet.has(action)) {
-        onRelease(action, source)
-      }
-    }
-
-    for (const action of nextActionSet) {
-      if (!activeActionsRef.current.has(action)) {
-        onPress(action, source)
-      }
-    }
-
-    activeActionsRef.current = nextActionSet
-  }
 
   const updateJoystick = (event: ReactPointerEvent<HTMLDivElement>) => {
     const joystick = joystickRef.current
@@ -77,9 +62,14 @@ export function TouchControls({
     const y = rawY * scale
 
     setStickPosition({ x, y })
-    synchronizeJoystickActions(
-      event.pointerId,
-      getJoystickActions(x / maximumDistance, y / maximumDistance),
+    const movement = getJoystickMovement(
+      x / maximumDistance,
+      y / maximumDistance,
+    )
+    onAnalogMovement(
+      sourceFor(event.pointerId),
+      movement.forwardAmount,
+      movement.turnAmount,
     )
   }
 
@@ -105,7 +95,7 @@ export function TouchControls({
     }
 
     event.preventDefault()
-    synchronizeJoystickActions(event.pointerId, [])
+    onAnalogMovementEnd(sourceFor(event.pointerId))
     activePointerIdRef.current = null
     setStickPosition(CENTERED_STICK)
   }
@@ -184,9 +174,6 @@ export function TouchControls({
         onPointerCancel={stopJoystick}
         onLostPointerCapture={stopJoystick}
       >
-        <span className="touch-joystick-arrows" aria-hidden="true">
-          ←&nbsp;&nbsp;↑&nbsp;&nbsp;→
-        </span>
         <span className="touch-joystick-thumb" aria-hidden="true" />
       </div>
 

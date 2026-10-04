@@ -23,6 +23,8 @@ export interface PlayerInput {
   forward: boolean
   turnLeft: boolean
   turnRight: boolean
+  forwardAmount?: number
+  turnAmount?: number
   fireFront: boolean
   fireLeftBroadside: boolean
   fireRightBroadside: boolean
@@ -107,7 +109,11 @@ export function updateGameState(
     config.match.sessionDurationSeconds - elapsedTimeSeconds,
   )
 
-  const turnDirection = Number(input.turnRight) - Number(input.turnLeft)
+  const turnDirection = clamp(
+    input.turnAmount ?? Number(input.turnRight) - Number(input.turnLeft),
+    -1,
+    1,
+  )
   const candidateRotation = normalizeAngle(
     state.player.rotation +
       turnDirection * config.player.rotationSpeed * deltaSeconds,
@@ -121,9 +127,13 @@ export function updateGameState(
     ? state.player.rotation
     : candidateRotation
 
-  const distance = input.forward
-    ? config.player.movementSpeed * deltaSeconds
-    : 0
+  const forwardAmount = clamp(
+    input.forwardAmount ?? Number(input.forward),
+    0,
+    1,
+  )
+  const distance =
+    config.player.movementSpeed * forwardAmount * deltaSeconds
   const nextX = state.player.x + Math.sin(rotation) * distance
   const nextY = state.player.y - Math.cos(rotation) * distance
   const boundaryRadius = config.player.boundaryRadius

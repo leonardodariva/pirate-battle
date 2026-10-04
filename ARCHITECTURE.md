@@ -89,12 +89,14 @@ update. Multiple pointer ids allow movement and firing with different fingers at
 the same time. Input never mutates game state directly; it only produces the
 snapshot consumed by `updateGameState`.
 
-The mobile movement control is a virtual joystick with a central dead zone.
-Dragging upward requests forward movement, dragging sideways requests rotation,
-and a diagonal combines both actions. The three weapon buttons use the official
-Jungle Gaming control assets. Browser callouts, text selection, scrolling, and
-the context menu are disabled only inside the touch control area so a sustained
-press behaves like a game controller instead of a webpage gesture.
+The mobile movement control is a proportional virtual joystick with a central
+dead zone. Drag distance becomes a `0..1` forward amount and a `-1..1` turn
+amount, so small movements produce slower responses while the edge reaches the
+same maximum speed as the keyboard. A diagonal combines both axes. The three
+weapon buttons use the official Jungle Gaming control assets. Browser callouts,
+text selection, scrolling, and the context menu are disabled only inside the
+touch control area so a sustained press behaves like a game controller instead
+of a webpage gesture.
 
 Held and queued input is cleared on window blur, pause, and runtime teardown.
 Keyboard listeners are removed and active touch access is disconnected when the
