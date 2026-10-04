@@ -30,13 +30,13 @@
 }
 
 .jungle-logo {
-  width: 42%;
+  width: 48%;
   flex-shrink: 0;
   margin: 0 0 0.35rem;
 }
 
 .menu-title {
-  width: 128%;
+  width: 124%;
   max-width: none;
   flex-shrink: 0;
   margin: 0 0 0.5rem;
@@ -93,7 +93,7 @@ button:focus-visible {
 }
 
 .primary-button {
-  width: min(100%, 16rem);
+  width: min(100%, 17.5rem);
   aspect-ratio: 256 / 88;
   flex-shrink: 0;
   border: 0;

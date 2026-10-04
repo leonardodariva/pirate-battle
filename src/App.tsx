@@ -59,7 +59,7 @@ function App() {
         <button className="primary-button" onClick={() => setIsPlaying(true)}>
           Play
         </button>
-        <p className="menu-copy">Navigate the islands. Survive the battle.</p>
+        <p className="menu-copy">Navigate. Explore. Survive.</p>
       </section>
     </main>
   )
