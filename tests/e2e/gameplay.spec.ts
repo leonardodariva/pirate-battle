@@ -73,6 +73,28 @@ test('loads and paginates the ranking through the mocked API', async ({
   await expect(page.getByText('Page 1 of 3')).toBeVisible()
 })
 
+test('loads the current player match history and paginates it', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Match history' }).click()
+
+  await expect(
+    page.getByRole('heading', { name: 'Match History' }),
+  ).toBeVisible()
+  await expect(page.getByRole('row').nth(1)).toContainText('Oct 3, 2026')
+  await expect(page.getByRole('row').nth(1)).toContainText('Time up')
+  await expect(page.getByRole('row').nth(2)).toContainText('Ship destroyed')
+  await expect(page.getByText('Page 1 of 2')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Next' }).click()
+  await expect(page.getByText('Page 2 of 2')).toBeVisible()
+  await expect(page.getByRole('row').nth(1)).toContainText('Sep 28, 2026')
+
+  await page.getByRole('button', { name: 'Back' }).click()
+  await expect(page.getByRole('button', { name: 'Play' })).toBeVisible()
+})
+
 test('validates, persists, and snapshots gameplay options', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('button', { name: 'Options' }).click()

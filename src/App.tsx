@@ -13,17 +13,26 @@ import {
 import { OptionsScreen } from './features/options/OptionsScreen'
 import { ControlsScreen } from './features/controls/ControlsScreen'
 import { RankingScreen } from './features/ranking/RankingScreen'
+import { MatchHistoryScreen } from './features/history/MatchHistoryScreen'
 import {
   loadGameOptions,
   saveGameOptions,
 } from './storage/gameOptionsStorage'
+import { getOrCreatePlayerIdentity } from './storage/playerIdentityStorage'
 import './App.css'
 
-type AppScreen = 'menu' | 'options' | 'controls' | 'ranking' | 'game'
+type AppScreen =
+  | 'menu'
+  | 'options'
+  | 'controls'
+  | 'ranking'
+  | 'history'
+  | 'game'
 
 function App() {
   const [screen, setScreen] = useState<AppScreen>('menu')
   const [options, setOptions] = useState<GameOptions>(loadGameOptions)
+  const [player] = useState(getOrCreatePlayerIdentity)
   const [matchConfig, setMatchConfig] = useState<GameConfig>(() =>
     createMatchConfig(GAME_CONFIG, options),
   )
@@ -171,6 +180,15 @@ function App() {
     )
   }
 
+  if (screen === 'history') {
+    return (
+      <MatchHistoryScreen
+        player={player}
+        onBack={() => setScreen('menu')}
+      />
+    )
+  }
+
   return (
     <main className="menu-screen">
       <section className="menu-card" aria-labelledby="game-title">
@@ -210,6 +228,12 @@ function App() {
             onClick={() => setScreen('ranking')}
           >
             Ranking
+          </button>
+          <button
+            className="secondary-button menu-options-button"
+            onClick={() => setScreen('history')}
+          >
+            Match history
           </button>
         </div>
         <p className="menu-copy">Navigate. Explore. Survive.</p>

@@ -8,6 +8,23 @@ export interface RankingEntry {
   configKey: string
 }
 
+export type MatchEndReason = 'timeout' | 'player_destroyed'
+
+export interface MatchConfigurationSnapshot {
+  sessionDurationSeconds: number
+  enemySpawnIntervalSeconds: number
+}
+
+export interface MatchHistoryEntry {
+  matchId: string
+  playerId: string
+  score: number
+  durationSeconds: number
+  endReason: MatchEndReason
+  completedAt: string
+  configuration: MatchConfigurationSnapshot
+}
+
 export interface PaginatedResponse<T> {
   items: T[]
   page: number

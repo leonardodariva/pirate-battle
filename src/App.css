@@ -92,7 +92,7 @@ h1 {
 .menu-secondary-actions {
   display: grid;
   width: min(90%, 22rem);
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5rem;
   margin-top: 0.6rem;
 }
@@ -192,6 +192,17 @@ h1 {
 .ranking-table td:nth-child(3),
 .ranking-table td:nth-child(4) {
   width: 5rem;
+}
+
+.history-table td:nth-child(1),
+.history-table td:nth-child(3),
+.history-table td:nth-child(4) {
+  width: auto;
+}
+
+.history-table th,
+.history-table td {
+  white-space: nowrap;
 }
 
 .ranking-pagination {

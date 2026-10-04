@@ -57,7 +57,7 @@ all systems use this snapshot instead of reading local storage or mutable React
 state. Therefore, changing persisted options cannot alter a match already in
 progress; Play Again creates a new snapshot from the latest options.
 
-## Ranking data flow
+## Ranking and match-history data flow
 
 The Ranking screen owns only local pagination UI. TanStack Query owns remote
 loading, error, cache, retry, and background-fetch state under the key
@@ -72,10 +72,17 @@ affect match comparability. The current form is
 by that key, orders them by descending score with deterministic tie breakers,
 and returns a typed paginated response.
 
+Match History follows the same boundary under the key
+`["history", playerId, page]`, but filters by the locally persisted player
+identity and orders completed matches from newest to oldest. Each history row
+contains the score, effective duration, end reason, completion date, and the
+configuration snapshot used by that match. The browser creates the player
+identity once with `crypto.randomUUID()` and reuses it after refresh.
+
 MSW starts before React mounts and uses the generated worker from `public/`, so
 the same REST boundary is present in development, Playwright, preview, and the
 eventual static deployment. A small HTML bootstrap status remains visible while
-the worker initializes. This milestone implements the normal ranking scenario;
+the worker initializes. This milestone implements the normal ranking and history scenarios;
 scenario selection, persisted mock records, failures, and variable latency are
 intentionally deferred.
 
