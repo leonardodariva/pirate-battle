@@ -109,6 +109,23 @@ not intended for complex maps with many tightly packed obstacles.
 Player death and periodic spawning will build on the same enemy state in
 following milestones.
 
+## Shooter enemy
+
+The deterministic Shooter uses the official red `ship_3.png` asset. Outside
+its configured attack range it uses the same island-aware navigation as the
+Chaser. Inside range, it stops translating, rotates toward the player, and
+fires only when the angular error is within a configured tolerance and its
+fixed-timestep cooldown is ready.
+
+An island blocking the direct segment prevents firing even when the player is
+numerically within range, so the Shooter first navigates to regain line of
+sight. Enemy shots use the shared projectile state with `owner: "enemy"` and
+are removed on their first collision with the player's capsule. A shot emitted
+by a Shooter defeated during the same simulation update is discarded.
+
+The first Shooter is currently deterministic for development and gameplay
+validation. Periodic spawn selection remains the next milestone.
+
 ## Chaser contact damage
 
 `CombatSystem` checks the Chaser circle against the three circles approximating

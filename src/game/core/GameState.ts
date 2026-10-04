@@ -6,6 +6,7 @@ import {
 } from '../utils/collision'
 import {
   resolveChaserPlayerCollisions,
+  resolveEnemyProjectileHits,
   resolvePlayerProjectileHits,
 } from '../systems/CombatSystem'
 import {
@@ -128,12 +129,13 @@ export function updateGameState(
     rotation,
     health: state.player.health,
   }
-  const movedEnemies = updateEnemies(
+  const enemyUpdateResult = updateEnemies(
     state.enemies,
     movedPlayer,
     deltaSeconds,
     config,
   )
+  const movedEnemies = enemyUpdateResult.enemies
   let frontCannonCooldownRemaining = Math.max(
     0,
     state.frontCannonCooldownRemaining - deltaSeconds,
@@ -186,8 +188,33 @@ export function updateGameState(
     projectileCombatResult.score,
     config,
   )
-  const { player, enemies, score } = contactCombatResult
-  const projectiles = projectileCombatResult.projectiles
+  const enemyProjectileCombatResult = resolveEnemyProjectileHits(
+    contactCombatResult.player,
+    projectileCombatResult.projectiles,
+    config,
+  )
+  const player = enemyProjectileCombatResult.player
+  const { enemies, score } = contactCombatResult
+  const projectiles = enemyProjectileCombatResult.projectiles
+  const survivingEnemyIds = new Set(enemies.map((enemy) => enemy.id))
+
+  for (const shot of enemyUpdateResult.shots) {
+    if (!survivingEnemyIds.has(shot.sourceEnemyId)) {
+      continue
+    }
+
+    projectiles.push({
+      id: nextProjectileId,
+      x: shot.x,
+      y: shot.y,
+      direction: shot.direction,
+      speed: shot.speed,
+      damage: shot.damage,
+      lifetimeRemaining: shot.lifetimeRemaining,
+      owner: 'enemy',
+    })
+    nextProjectileId += 1
+  }
 
   if (input.fireFront && frontCannonCooldownRemaining === 0) {
     projectiles.push({

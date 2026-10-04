@@ -11,6 +11,7 @@ import {
 } from 'pixi.js'
 import playerShipUrl from '../../../assets/png/default/ships/ship_5.png'
 import chaserShipUrl from '../../../assets/png/default/ships/ship_2.png'
+import shooterShipUrl from '../../../assets/png/default/ships/ship_3.png'
 import cannonBallUrl from '../../../assets/png/default/ship_parts/cannon_ball.png'
 import islandTopLeftUrl from '../../../assets/png/default/tiles/tile_1.png'
 import islandTopUrl from '../../../assets/png/default/tiles/tile_2.png'
@@ -33,6 +34,7 @@ import { GAME_CONFIG } from '../config/gameConfig'
 import { GameLoop } from '../core/GameLoop'
 import { createInitialGameState, updateGameState } from '../core/GameState'
 import { KeyboardInput } from '../input/KeyboardInput'
+import { getEnemyMaxHealth } from '../systems/EnemySystem'
 import { installGameTestBridge } from '../testing/GameTestBridge'
 
 type LoadState =
@@ -168,6 +170,7 @@ export function GameCanvas() {
           cannonBallUrl,
           ...islandAssetUrls,
           chaserShipUrl,
+          shooterShipUrl,
           playerHealthFrameUrl,
           playerHealthGreenUrl,
           playerHealthAmberUrl,
@@ -208,6 +211,7 @@ export function GameCanvas() {
         const playerTexture = getTexture(playerShipUrl)
         const cannonBallTexture = getTexture(cannonBallUrl)
         const chaserTexture = getTexture(chaserShipUrl)
+        const shooterTexture = getTexture(shooterShipUrl)
         const islandTextures = islandAssetUrls.map(getTexture)
         const playerHealthFrameTexture = getTexture(playerHealthFrameUrl)
         const playerHealthGreenTexture = getTexture(playerHealthGreenUrl)
@@ -289,6 +293,23 @@ export function GameCanvas() {
               ],
             }
           },
+          (setup) => {
+            gameState = {
+              ...gameState,
+              enemies: [
+                {
+                  id: 2,
+                  type: 'shooter',
+                  x: setup.x,
+                  y: setup.y,
+                  rotation: setup.rotation,
+                  health: setup.health,
+                  fireCooldownRemaining:
+                    setup.fireCooldownRemaining ?? 0,
+                },
+              ],
+            }
+          },
         )
         const gameLoop = new GameLoop(
           GAME_CONFIG.loop.fixedStepSeconds,
@@ -346,7 +367,9 @@ export function GameCanvas() {
             let sprite = enemySprites.get(enemy.id)
 
             if (!sprite) {
-              sprite = new Sprite(chaserTexture)
+              sprite = new Sprite(
+                enemy.type === 'chaser' ? chaserTexture : shooterTexture,
+              )
               sprite.anchor.set(0.5)
               sprite.scale.set(0.85)
               enemyLayer.addChild(sprite)
@@ -367,13 +390,14 @@ export function GameCanvas() {
 
             const healthBar = enemyHealthBars.get(enemy.id)
             if (healthBar) {
+              const maximumHealth = getEnemyMaxHealth(enemy, GAME_CONFIG)
               updateHealthBar(
                 healthBar,
                 enemy.x,
                 enemy.y,
                 enemy.health,
-                GAME_CONFIG.chaser.maxHealth,
-                enemy.health > GAME_CONFIG.chaser.maxHealth * 0.5
+                maximumHealth,
+                enemy.health > maximumHealth * 0.5
                   ? enemyHealthGreenTexture
                   : enemyHealthRedTexture,
                 ENEMY_HEALTH_BAR,

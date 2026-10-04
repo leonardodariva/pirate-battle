@@ -1,6 +1,9 @@
 import type { GameConfig } from '../config/gameConfig'
 import { circlesIntersect, getRotatedCircleCenters } from '../utils/collision'
-import type { EnemyState } from './EnemySystem'
+import {
+  getEnemyCollisionRadius,
+  type EnemyState,
+} from './EnemySystem'
 
 interface CombatPlayerState {
   x: number
@@ -30,6 +33,13 @@ export interface ProjectileCombatResult<
   score: number
 }
 
+export interface EnemyProjectileCombatResult<
+  Projectile extends CombatProjectileState,
+> {
+  player: CombatPlayerState
+  projectiles: Projectile[]
+}
+
 export function resolvePlayerProjectileHits<
   Projectile extends CombatProjectileState,
 >(
@@ -56,7 +66,7 @@ export function resolvePlayerProjectileHits<
           config.projectiles.collisionRadius,
           enemy.x,
           enemy.y,
-          config.chaser.collisionRadius,
+          getEnemyCollisionRadius(enemy, config),
         ),
     )
 
@@ -75,6 +85,52 @@ export function resolvePlayerProjectileHits<
     enemies: survivingEnemies,
     projectiles: survivingProjectiles,
     score: score + defeatedEnemyCount,
+  }
+}
+
+export function resolveEnemyProjectileHits<
+  Projectile extends CombatProjectileState,
+>(
+  player: CombatPlayerState,
+  projectiles: Projectile[],
+  config: GameConfig,
+): EnemyProjectileCombatResult<Projectile> {
+  const playerCircles = getRotatedCircleCenters(
+    player.x,
+    player.y,
+    player.rotation,
+    config.player.collisionOffsets,
+  )
+  const survivingProjectiles: Projectile[] = []
+  let projectileDamage = 0
+
+  for (const projectile of projectiles) {
+    const hitPlayer =
+      projectile.owner === 'enemy' &&
+      playerCircles.some((circle) =>
+        circlesIntersect(
+          projectile.x,
+          projectile.y,
+          config.projectiles.collisionRadius,
+          circle.x,
+          circle.y,
+          config.player.collisionRadius,
+        ),
+      )
+
+    if (hitPlayer) {
+      projectileDamage += projectile.damage
+    } else {
+      survivingProjectiles.push(projectile)
+    }
+  }
+
+  return {
+    player: {
+      ...player,
+      health: Math.max(0, player.health - projectileDamage),
+    },
+    projectiles: survivingProjectiles,
   }
 }
 

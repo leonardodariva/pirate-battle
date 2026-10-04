@@ -45,6 +45,24 @@ export interface GameConfig {
       rotation: number
     }
   }
+  shooter: {
+    maxHealth: number
+    movementSpeed: number
+    rotationSpeed: number
+    collisionRadius: number
+    attackRange: number
+    fireCooldownSeconds: number
+    aimToleranceRadians: number
+    projectileSpeed: number
+    projectileDamage: number
+    projectileLifetimeSeconds: number
+    projectileSpawnOffset: number
+    firstSpawn: {
+      x: number
+      y: number
+      rotation: number
+    }
+  }
   islands: ReadonlyArray<{
     id: string
     x: number
@@ -99,6 +117,24 @@ export const GAME_CONFIG: GameConfig = {
     firstSpawn: {
       x: 180,
       y: 180,
+      rotation: 0,
+    },
+  },
+  shooter: {
+    maxHealth: 3,
+    movementSpeed: 70,
+    rotationSpeed: 1.8,
+    collisionRadius: 25,
+    attackRange: 360,
+    fireCooldownSeconds: 1.5,
+    aimToleranceRadians: 0.12,
+    projectileSpeed: 360,
+    projectileDamage: 10,
+    projectileLifetimeSeconds: 2.5,
+    projectileSpawnOffset: 52,
+    firstSpawn: {
+      x: 1_100,
+      y: 600,
       rotation: 0,
     },
   },

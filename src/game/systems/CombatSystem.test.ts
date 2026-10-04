@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { GAME_CONFIG } from '../config/gameConfig'
-import type { EnemyState } from './EnemySystem'
+import type { ChaserState, EnemyState } from './EnemySystem'
 import {
   resolveChaserPlayerCollisions,
+  resolveEnemyProjectileHits,
   resolvePlayerProjectileHits,
 } from './CombatSystem'
 
@@ -13,7 +14,7 @@ const PLAYER = {
   health: GAME_CONFIG.player.maxHealth,
 }
 
-function createChaser(overrides: Partial<EnemyState> = {}): EnemyState {
+function createChaser(overrides: Partial<ChaserState> = {}): ChaserState {
   return {
     id: 1,
     type: 'chaser',
@@ -107,5 +108,58 @@ describe('resolvePlayerProjectileHits', () => {
     expect(result.projectiles).toHaveLength(0)
     expect(result.enemies).toHaveLength(0)
     expect(result.score).toBe(5)
+  })
+
+  it('awards one point when a player projectile destroys the shooter', () => {
+    const shooter: EnemyState = {
+      id: 2,
+      type: 'shooter',
+      x: 900,
+      y: 500,
+      rotation: 0,
+      health: 1,
+      fireCooldownRemaining: 0,
+    }
+    const projectile = {
+      id: 1,
+      x: shooter.x,
+      y: shooter.y,
+      damage: 1,
+      owner: 'player' as const,
+    }
+
+    const result = resolvePlayerProjectileHits(
+      [shooter],
+      [projectile],
+      0,
+      GAME_CONFIG,
+    )
+
+    expect(result.enemies).toHaveLength(0)
+    expect(result.projectiles).toHaveLength(0)
+    expect(result.score).toBe(1)
+  })
+})
+
+describe('resolveEnemyProjectileHits', () => {
+  it('damages the player once and removes the enemy projectile', () => {
+    const projectile = {
+      id: 1,
+      x: PLAYER.x,
+      y: PLAYER.y,
+      damage: GAME_CONFIG.shooter.projectileDamage,
+      owner: 'enemy' as const,
+    }
+
+    const result = resolveEnemyProjectileHits(
+      PLAYER,
+      [projectile],
+      GAME_CONFIG,
+    )
+
+    expect(result.player.health).toBe(
+      PLAYER.health - GAME_CONFIG.shooter.projectileDamage,
+    )
+    expect(result.projectiles).toHaveLength(0)
   })
 })

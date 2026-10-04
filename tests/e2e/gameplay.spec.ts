@@ -124,14 +124,49 @@ test('applies chaser collision damage once without awarding score', async ({
   page,
 }) => {
   await startGame(page)
+  await page.evaluate(() => {
+    window.__GAME_TEST__?.placeChaser({
+      x: 640,
+      y: 250,
+      rotation: Math.PI,
+      health: 3,
+    })
+  })
 
   await page.waitForFunction(
-    () => (window.__GAME_TEST__?.getState().enemies.length ?? 1) === 0,
+    () =>
+      window.__GAME_TEST__
+        ?.getState()
+        .enemies.every((enemy) => enemy.type !== 'chaser') ?? false,
   )
 
   const collisionState = await readGameState(page)
   expect(collisionState.player.health).toBe(75)
   expect(collisionState.score).toBe(0)
+})
+
+test('keeps the shooter at range and damages the player with a real shot', async ({
+  page,
+}) => {
+  await startGame(page)
+  await page.evaluate(() => {
+    window.__GAME_TEST__?.placeShooter({
+      x: 640,
+      y: 600,
+      rotation: 0,
+      health: 3,
+    })
+  })
+
+  await page.waitForFunction(() => {
+    const state = window.__GAME_TEST__?.getState()
+    return state !== undefined && state.player.health === 90
+  })
+
+  const hitState = await readGameState(page)
+  const shooter = hitState.enemies.find((enemy) => enemy.type === 'shooter')
+  expect(shooter?.y).toBeCloseTo(600, 1)
+  expect(hitState.score).toBe(0)
 })
 
 test('damages and scores a chaser kill with a real projectile', async ({
@@ -164,13 +199,19 @@ test('fires the front cannon through real keyboard input', async ({ page }) => {
 
   await page.keyboard.press('Space')
   await page.waitForFunction(
-    () => (window.__GAME_TEST__?.getState().projectiles.length ?? 0) === 1,
+    () =>
+      window.__GAME_TEST__
+        ?.getState()
+        .projectiles.filter((projectile) => projectile.owner === 'player')
+        .length === 1,
   )
 
   const firedState = await readGameState(page)
-  expect(firedState.projectiles).toHaveLength(1)
-  expect(firedState.projectiles[0]?.owner).toBe('player')
-  expect(firedState.projectiles[0]?.y).toBeLessThan(initialState.player.y)
+  const playerProjectiles = firedState.projectiles.filter(
+    (projectile) => projectile.owner === 'player',
+  )
+  expect(playerProjectiles).toHaveLength(1)
+  expect(playerProjectiles[0]?.y).toBeLessThan(initialState.player.y)
 })
 
 test('fires three projectiles from each broadside', async ({ page }) => {
@@ -178,24 +219,38 @@ test('fires three projectiles from each broadside', async ({ page }) => {
 
   await page.keyboard.press('q')
   await page.waitForFunction(
-    () => (window.__GAME_TEST__?.getState().projectiles.length ?? 0) === 3,
+    () =>
+      window.__GAME_TEST__
+        ?.getState()
+        .projectiles.filter((projectile) => projectile.owner === 'player')
+        .length === 3,
   )
 
   const leftState = await readGameState(page)
-  expect(leftState.projectiles).toHaveLength(3)
-  for (const projectile of leftState.projectiles) {
+  const leftProjectiles = leftState.projectiles.filter(
+    (projectile) => projectile.owner === 'player',
+  )
+  expect(leftProjectiles).toHaveLength(3)
+  for (const projectile of leftProjectiles) {
     expect(projectile.direction).toBeCloseTo(-Math.PI / 2)
   }
 
   await startGame(page)
   await page.keyboard.press('e')
   await page.waitForFunction(
-    () => (window.__GAME_TEST__?.getState().projectiles.length ?? 0) === 3,
+    () =>
+      window.__GAME_TEST__
+        ?.getState()
+        .projectiles.filter((projectile) => projectile.owner === 'player')
+        .length === 3,
   )
 
   const rightState = await readGameState(page)
-  expect(rightState.projectiles).toHaveLength(3)
-  for (const projectile of rightState.projectiles) {
+  const rightProjectiles = rightState.projectiles.filter(
+    (projectile) => projectile.owner === 'player',
+  )
+  expect(rightProjectiles).toHaveLength(3)
+  for (const projectile of rightProjectiles) {
     expect(projectile.direction).toBeCloseTo(Math.PI / 2)
   }
 })
@@ -209,7 +264,8 @@ test('blocks the player and projectiles at the island', async ({ page }) => {
     return (
       state !== undefined &&
       state.rightBroadsideCooldownRemaining > 0 &&
-      state.projectiles.length === 1
+      state.projectiles.filter((projectile) => projectile.owner === 'player')
+        .length === 1
     )
   })
 

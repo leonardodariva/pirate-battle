@@ -9,11 +9,12 @@ export interface GameTestSnapshot {
   }
   enemies: Array<{
     id: number
-    type: 'chaser'
+    type: 'chaser' | 'shooter'
     x: number
     y: number
     rotation: number
     health: number
+    fireCooldownRemaining?: number
   }>
   projectiles: Array<{
     id: number
@@ -32,6 +33,7 @@ interface GameTestBridge {
   getState: () => GameTestSnapshot
   placePlayer: (setup: PlayerTestSetup) => void
   placeChaser: (setup: ChaserTestSetup) => void
+  placeShooter: (setup: ShooterTestSetup) => void
 }
 
 interface PlayerTestSetup {
@@ -47,6 +49,10 @@ interface ChaserTestSetup {
   health: number
 }
 
+interface ShooterTestSetup extends ChaserTestSetup {
+  fireCooldownRemaining?: number
+}
+
 declare global {
   interface Window {
     __GAME_TEST__?: GameTestBridge
@@ -57,6 +63,7 @@ export function installGameTestBridge(
   readState: () => GameState,
   placePlayer: (setup: PlayerTestSetup) => void,
   placeChaser: (setup: ChaserTestSetup) => void,
+  placeShooter: (setup: ShooterTestSetup) => void,
 ) {
   if (import.meta.env.MODE !== 'test') {
     return () => {}
@@ -87,6 +94,7 @@ export function installGameTestBridge(
     },
     placePlayer,
     placeChaser,
+    placeShooter,
   }
 
   window.__GAME_TEST__ = bridge
