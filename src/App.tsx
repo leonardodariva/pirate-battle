@@ -1,32 +1,58 @@
 import { useState } from 'react'
 import jungleGamingLogoUrl from '../assets/logo_jungle_gaming.svg'
 import menuTitleUrl from '../assets/png/default/ui/menu/title_pirate_battle.png'
+import { GAME_CONFIG, type GameConfig } from './game/config/gameConfig'
+import {
+  createMatchConfig,
+  type GameOptions,
+} from './game/config/gameOptions'
 import {
   GameCanvas,
   type GameUiState,
 } from './game/rendering/GameCanvas'
+import { OptionsScreen } from './features/options/OptionsScreen'
+import {
+  loadGameOptions,
+  saveGameOptions,
+} from './storage/gameOptionsStorage'
 import './App.css'
 
+type AppScreen = 'menu' | 'options' | 'game'
+
 function App() {
-  const [isPlaying, setIsPlaying] = useState(false)
+  const [screen, setScreen] = useState<AppScreen>('menu')
+  const [options, setOptions] = useState<GameOptions>(loadGameOptions)
+  const [matchConfig, setMatchConfig] = useState<GameConfig>(() =>
+    createMatchConfig(GAME_CONFIG, options),
+  )
   const [matchKey, setMatchKey] = useState(0)
   const [pauseRequestId, setPauseRequestId] = useState(0)
   const [gameUiState, setGameUiState] = useState<GameUiState | null>(null)
 
   const startMatch = () => {
+    setMatchConfig(createMatchConfig(GAME_CONFIG, options))
     setGameUiState(null)
     setPauseRequestId(0)
     setMatchKey((currentKey) => currentKey + 1)
-    setIsPlaying(true)
+    setScreen('game')
   }
 
   const leaveMatch = () => {
-    setIsPlaying(false)
+    setScreen('menu')
     setGameUiState(null)
   }
 
-  if (isPlaying) {
-    const remainingSeconds = Math.ceil(gameUiState?.remainingTimeSeconds ?? 120)
+  const handleSaveOptions = (nextOptions: GameOptions) => {
+    saveGameOptions(nextOptions)
+    setOptions(nextOptions)
+    setScreen('menu')
+  }
+
+  if (screen === 'game') {
+    const remainingSeconds = Math.ceil(
+      gameUiState?.remainingTimeSeconds ??
+        matchConfig.match.sessionDurationSeconds,
+    )
     const resultTitle =
       gameUiState?.endReason === 'timeout'
         ? 'Time is up!'
@@ -67,6 +93,7 @@ function App() {
           </h2>
           <GameCanvas
             key={matchKey}
+            config={matchConfig}
             pauseRequestId={pauseRequestId}
             onStateChange={setGameUiState}
           />
@@ -118,6 +145,16 @@ function App() {
     )
   }
 
+  if (screen === 'options') {
+    return (
+      <OptionsScreen
+        options={options}
+        onSave={handleSaveOptions}
+        onCancel={() => setScreen('menu')}
+      />
+    )
+  }
+
   return (
     <main className="menu-screen">
       <section className="menu-card" aria-labelledby="game-title">
@@ -138,6 +175,12 @@ function App() {
         <p className="menu-tagline">Set sail. Take command.</p>
         <button className="primary-button" onClick={startMatch}>
           Play
+        </button>
+        <button
+          className="secondary-button menu-options-button"
+          onClick={() => setScreen('options')}
+        >
+          Options
         </button>
         <p className="menu-copy">Navigate. Explore. Survive.</p>
       </section>

@@ -1,3 +1,4 @@
+import type { GameConfig } from '../config/gameConfig'
 import type { GameState } from '../core/GameState'
 
 export interface GameTestSnapshot {
@@ -5,6 +6,10 @@ export interface GameTestSnapshot {
   endReason: 'timeout' | 'player_destroyed' | null
   elapsedTimeSeconds: number
   remainingTimeSeconds: number
+  config: {
+    sessionDurationSeconds: number
+    enemySpawnIntervalSeconds: number
+  }
   player: {
     x: number
     y: number
@@ -72,6 +77,7 @@ export function installGameTestBridge(
   placeShooter: (setup: ShooterTestSetup) => void,
   setRemainingTime: (seconds: number) => void,
   setPlayerHealth: (health: number) => void,
+  config: GameConfig,
 ) {
   if (import.meta.env.MODE !== 'test') {
     return () => {}
@@ -86,6 +92,10 @@ export function installGameTestBridge(
         endReason: state.endReason,
         elapsedTimeSeconds: state.elapsedTimeSeconds,
         remainingTimeSeconds: state.remainingTimeSeconds,
+        config: {
+          sessionDurationSeconds: config.match.sessionDurationSeconds,
+          enemySpawnIntervalSeconds: config.spawn.intervalSeconds,
+        },
         player: { ...state.player },
         enemies: state.enemies.map((enemy) => ({ ...enemy })),
         projectiles: state.projectiles.map((projectile) => ({

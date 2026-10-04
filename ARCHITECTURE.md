@@ -37,6 +37,20 @@ remains outside React, avoiding 60 React renders per second. `Play again`
 remounts `GameCanvas`, so the normal lifecycle cleanup destroys the old runtime
 before a fresh match is created.
 
+## Options, persistence, and match snapshots
+
+The editable options are limited to session duration (60–180 seconds) and enemy
+spawn interval (1–20 seconds). Pure validation lives beside the typed game
+configuration, while JSON serialization and defensive parsing live in the
+storage layer. Missing, malformed, incorrectly shaped, or out-of-range stored
+data falls back to documented defaults rather than breaking application startup.
+
+Selecting Play creates a new `GameConfig` snapshot containing the current
+options and passes that object to `GameCanvas`. The simulation, test bridge, and
+all systems use this snapshot instead of reading local storage or mutable React
+state. Therefore, changing persisted options cannot alter a match already in
+progress; Play Again creates a new snapshot from the latest options.
+
 ## Pause lifecycle
 
 Pause is represented by `GameState.status === "paused"`, not by a visual-only

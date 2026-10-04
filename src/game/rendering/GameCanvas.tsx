@@ -30,7 +30,7 @@ import playerHealthRedUrl from '../../../assets/png/default/ui/hud/health_fill_r
 import enemyHealthFrameUrl from '../../../assets/png/default/ui/hud/enemy_health_frame.png'
 import enemyHealthGreenUrl from '../../../assets/png/default/ui/hud/enemy_health_fill_green.png'
 import enemyHealthRedUrl from '../../../assets/png/default/ui/hud/enemy_health_fill_red.png'
-import { GAME_CONFIG } from '../config/gameConfig'
+import type { GameConfig } from '../config/gameConfig'
 import { GameLoop } from '../core/GameLoop'
 import {
   createInitialGameState,
@@ -86,6 +86,7 @@ export interface GameUiState {
 }
 
 interface GameCanvasProps {
+  config: GameConfig
   onStateChange?: (state: GameUiState) => void
   pauseRequestId?: number
 }
@@ -145,6 +146,7 @@ function updateHealthBar(
 }
 
 export function GameCanvas({
+  config,
   onStateChange,
   pauseRequestId = 0,
 }: GameCanvasProps) {
@@ -276,11 +278,11 @@ export function GameCanvas({
         const world = new Container()
         const water = new TilingSprite({
           texture: waterTexture,
-          width: GAME_CONFIG.arena.width,
-          height: GAME_CONFIG.arena.height,
+          width: config.arena.width,
+          height: config.arena.height,
         })
         const islandLayer = new Container()
-        for (const island of GAME_CONFIG.islands) {
+        for (const island of config.islands) {
           const islandContainer = new Container()
           islandContainer.position.set(island.x, island.y)
 
@@ -317,7 +319,7 @@ export function GameCanvas({
         healthBarLayer.addChild(playerHealthBar.container)
         application.stage.addChild(world)
 
-        let gameState = createInitialGameState(GAME_CONFIG)
+        let gameState = createInitialGameState(config)
         let uiSyncElapsedSeconds = 0
         const publishUiState = () => {
           onStateChangeRef.current?.({
@@ -376,12 +378,12 @@ export function GameCanvas({
           (seconds) => {
             const remainingTimeSeconds = Math.max(
               0,
-              Math.min(GAME_CONFIG.match.sessionDurationSeconds, seconds),
+              Math.min(config.match.sessionDurationSeconds, seconds),
             )
             gameState = {
               ...gameState,
               elapsedTimeSeconds:
-                GAME_CONFIG.match.sessionDurationSeconds -
+                config.match.sessionDurationSeconds -
                 remainingTimeSeconds,
               remainingTimeSeconds,
             }
@@ -393,22 +395,23 @@ export function GameCanvas({
                 ...gameState.player,
                 health: Math.max(
                   0,
-                  Math.min(GAME_CONFIG.player.maxHealth, health),
+                  Math.min(config.player.maxHealth, health),
                 ),
               },
             }
           },
+          config,
         )
         const gameLoop = new GameLoop(
-          GAME_CONFIG.loop.fixedStepSeconds,
-          GAME_CONFIG.loop.maxFrameDeltaSeconds,
+          config.loop.fixedStepSeconds,
+          config.loop.maxFrameDeltaSeconds,
           (fixedStepSeconds) => {
             const previousStatus = gameState.status
             gameState = updateGameState(
               gameState,
               keyboardInput.read(),
               fixedStepSeconds,
-              GAME_CONFIG,
+              config,
             )
             uiSyncElapsedSeconds += fixedStepSeconds
 
@@ -475,9 +478,9 @@ export function GameCanvas({
           playerShip.rotation =
             gameState.player.rotation + PLAYER_SPRITE_ROTATION_OFFSET
           const playerHealthFill =
-            gameState.player.health > GAME_CONFIG.player.maxHealth * 0.5
+            gameState.player.health > config.player.maxHealth * 0.5
               ? playerHealthGreenTexture
-              : gameState.player.health > GAME_CONFIG.player.maxHealth * 0.25
+              : gameState.player.health > config.player.maxHealth * 0.25
                 ? playerHealthAmberTexture
                 : playerHealthRedTexture
           updateHealthBar(
@@ -485,7 +488,7 @@ export function GameCanvas({
             gameState.player.x,
             gameState.player.y,
             gameState.player.health,
-            GAME_CONFIG.player.maxHealth,
+            config.player.maxHealth,
             playerHealthFill,
             PLAYER_HEALTH_BAR,
           )
@@ -536,7 +539,7 @@ export function GameCanvas({
 
             const healthBar = enemyHealthBars.get(enemy.id)
             if (healthBar) {
-              const maximumHealth = getEnemyMaxHealth(enemy, GAME_CONFIG)
+              const maximumHealth = getEnemyMaxHealth(enemy, config)
               updateHealthBar(
                 healthBar,
                 enemy.x,
@@ -589,15 +592,15 @@ export function GameCanvas({
           const width = Math.max(hostElement.clientWidth, 1)
           const height = Math.max(hostElement.clientHeight, 1)
           const worldScale = Math.min(
-            width / GAME_CONFIG.arena.width,
-            height / GAME_CONFIG.arena.height,
+            width / config.arena.width,
+            height / config.arena.height,
           )
 
           application.renderer.resize(width, height)
           world.scale.set(worldScale)
           world.position.set(
-            (width - GAME_CONFIG.arena.width * worldScale) / 2,
-            (height - GAME_CONFIG.arena.height * worldScale) / 2,
+            (width - config.arena.width * worldScale) / 2,
+            (height - config.arena.height * worldScale) / 2,
           )
         }
 
@@ -639,7 +642,7 @@ export function GameCanvas({
       removeRuntimeListeners()
       destroyApplication()
     }
-  }, [loadAttempt])
+  }, [config, loadAttempt])
 
   return (
     <div className="game-canvas-shell">

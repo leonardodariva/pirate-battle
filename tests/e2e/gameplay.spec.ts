@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import type { GameTestSnapshot } from '../../src/game/testing/GameTestBridge'
+import { GAME_OPTIONS_STORAGE_KEY } from '../../src/storage/gameOptionsStorage'
 
 async function startGame(page: Page) {
   await page.goto('/')
@@ -34,6 +35,55 @@ test('starts a match and loads one PixiJS canvas', async ({ page }) => {
   expect(state.player.x).toBe(640)
   expect(state.player.y).toBe(360)
   expect(state.player.rotation).toBe(0)
+})
+
+test('validates, persists, and snapshots gameplay options', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Options' }).click()
+
+  const durationInput = page.getByLabel('Game session time')
+  const spawnInput = page.getByLabel('Enemy spawn time')
+  await durationInput.fill('59')
+  await spawnInput.fill('0')
+  await page.getByRole('button', { name: 'Save' }).click()
+
+  await expect(page.getByRole('alert')).toHaveCount(2)
+  await durationInput.fill('90')
+  await spawnInput.fill('3')
+  await page.getByRole('button', { name: 'Save' }).click()
+
+  await expect(
+    page.getByRole('heading', { name: 'Pirate Battle' }),
+  ).toBeVisible()
+  await page.reload()
+  await page.getByRole('button', { name: 'Options' }).click()
+  await expect(page.getByLabel('Game session time')).toHaveValue('90')
+  await expect(page.getByLabel('Enemy spawn time')).toHaveValue('3')
+
+  await page.getByRole('button', { name: 'Back' }).click()
+  await page.getByRole('button', { name: 'Play' }).click()
+  await page.waitForFunction(() => window.__GAME_TEST__ !== undefined)
+
+  const initialState = await readGameState(page)
+  expect(initialState.config).toEqual({
+    sessionDurationSeconds: 90,
+    enemySpawnIntervalSeconds: 3,
+  })
+  await page.evaluate(
+    ({ key }) => {
+      window.localStorage.setItem(
+        key,
+        JSON.stringify({
+          sessionDurationSeconds: 180,
+          enemySpawnIntervalSeconds: 20,
+        }),
+      )
+    },
+    { key: GAME_OPTIONS_STORAGE_KEY },
+  )
+
+  const unchangedMatchState = await readGameState(page)
+  expect(unchangedMatchState.config).toEqual(initialState.config)
 })
 
 test('spawns the guaranteed Chaser first and Shooter second', async ({ page }) => {
