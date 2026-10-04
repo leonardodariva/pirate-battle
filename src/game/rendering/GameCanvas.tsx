@@ -70,6 +70,19 @@ interface HealthBarView {
   mask: Graphics
 }
 
+export interface GameUiState {
+  status: 'running' | 'ended'
+  endReason: 'timeout' | 'player_destroyed' | null
+  score: number
+  health: number
+  elapsedTimeSeconds: number
+  remainingTimeSeconds: number
+}
+
+interface GameCanvasProps {
+  onStateChange?: (state: GameUiState) => void
+}
+
 function createHealthBar(
   frameTexture: Texture,
   fillTexture: Texture,
@@ -112,13 +125,18 @@ function updateHealthBar(
   view.container.position.set(x, y - metrics.offsetY)
 }
 
-export function GameCanvas() {
+export function GameCanvas({ onStateChange }: GameCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null)
+  const onStateChangeRef = useRef(onStateChange)
   const [loadState, setLoadState] = useState<LoadState>({
     status: 'loading',
     progress: 0,
   })
   const [loadAttempt, setLoadAttempt] = useState(0)
+
+  useEffect(() => {
+    onStateChangeRef.current = onStateChange
+  }, [onStateChange])
 
   useEffect(() => {
     const host = hostRef.current
@@ -269,6 +287,17 @@ export function GameCanvas() {
         application.stage.addChild(world)
 
         let gameState = createInitialGameState(GAME_CONFIG)
+        let uiSyncElapsedSeconds = 0
+        const publishUiState = () => {
+          onStateChangeRef.current?.({
+            status: gameState.status,
+            endReason: gameState.endReason,
+            score: gameState.score,
+            health: gameState.player.health,
+            elapsedTimeSeconds: gameState.elapsedTimeSeconds,
+            remainingTimeSeconds: gameState.remainingTimeSeconds,
+          })
+        }
         const keyboardInput = new KeyboardInput(window)
         const removeTestBridge = installGameTestBridge(
           () => gameState,
@@ -310,17 +339,52 @@ export function GameCanvas() {
               ],
             }
           },
+          (seconds) => {
+            const remainingTimeSeconds = Math.max(
+              0,
+              Math.min(GAME_CONFIG.match.sessionDurationSeconds, seconds),
+            )
+            gameState = {
+              ...gameState,
+              elapsedTimeSeconds:
+                GAME_CONFIG.match.sessionDurationSeconds -
+                remainingTimeSeconds,
+              remainingTimeSeconds,
+            }
+          },
+          (health) => {
+            gameState = {
+              ...gameState,
+              player: {
+                ...gameState.player,
+                health: Math.max(
+                  0,
+                  Math.min(GAME_CONFIG.player.maxHealth, health),
+                ),
+              },
+            }
+          },
         )
         const gameLoop = new GameLoop(
           GAME_CONFIG.loop.fixedStepSeconds,
           GAME_CONFIG.loop.maxFrameDeltaSeconds,
           (fixedStepSeconds) => {
+            const previousStatus = gameState.status
             gameState = updateGameState(
               gameState,
               keyboardInput.read(),
               fixedStepSeconds,
               GAME_CONFIG,
             )
+            uiSyncElapsedSeconds += fixedStepSeconds
+
+            if (
+              uiSyncElapsedSeconds >= 0.25 ||
+              gameState.status !== previousStatus
+            ) {
+              uiSyncElapsedSeconds = 0
+              publishUiState()
+            }
           },
         )
 
@@ -433,8 +497,10 @@ export function GameCanvas() {
         }
 
         const handleTick = (ticker: Ticker) => {
-          gameLoop.advance(ticker.deltaMS / 1000)
-          renderScene()
+          if (gameState.status === 'running') {
+            gameLoop.advance(ticker.deltaMS / 1000)
+            renderScene()
+          }
         }
 
         const layoutScene = () => {
@@ -464,6 +530,7 @@ export function GameCanvas() {
         }
 
         renderScene()
+        publishUiState()
         layoutScene()
         setLoadState({ status: 'ready' })
       } catch (error) {

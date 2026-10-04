@@ -128,6 +128,28 @@ button:focus-visible {
   gap: 1rem;
 }
 
+.game-hud {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.game-hud span {
+  min-width: 6.5rem;
+  border: 1px solid rgba(128, 216, 229, 0.3);
+  border-radius: 0.6rem;
+  padding: 0.55rem 0.75rem;
+  background: rgba(3, 25, 35, 0.78);
+  color: #b7ccd1;
+  text-align: center;
+}
+
+.game-hud strong {
+  margin-left: 0.25rem;
+  color: #f8e6bd;
+}
+
 .game-header h1 {
   font-size: clamp(2rem, 5vw, 3.5rem);
 }
@@ -143,12 +165,64 @@ button:focus-visible {
 }
 
 .arena-panel {
+  position: relative;
   min-height: 20rem;
   overflow: hidden;
   border: 1px solid rgba(128, 216, 229, 0.35);
   border-radius: 1rem;
   background: #0a6480;
   box-shadow: 0 1.25rem 4rem rgba(0, 0, 0, 0.3);
+}
+
+.result-dialog {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  z-index: 2;
+  width: min(90%, 28rem);
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(246, 211, 101, 0.55);
+  border-radius: 1rem;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  background: rgba(3, 25, 35, 0.96);
+  box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.6);
+  color: #f5fbfc;
+  text-align: center;
+}
+
+.result-dialog h2 {
+  margin: 0 0 1.25rem;
+  color: #f8e6bd;
+  font-size: clamp(1.5rem, 5vw, 2.25rem);
+}
+
+.result-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin: 0 0 1.5rem;
+}
+
+.result-stats div {
+  border-radius: 0.6rem;
+  padding: 0.75rem 0.5rem;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.result-stats dt {
+  color: #b7ccd1;
+  font-size: 0.75rem;
+}
+
+.result-stats dd {
+  margin: 0.25rem 0 0;
+  color: #f8e6bd;
+  font-weight: 800;
+}
+
+.result-actions {
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
 }
 
 .game-canvas-shell,
@@ -219,7 +293,23 @@ kbd {
 
 @media (max-width: 640px) {
   .game-header {
-    align-items: flex-end;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .game-hud {
+    order: 3;
+    width: 100%;
+  }
+
+  .game-hud span {
+    min-width: 0;
+    flex: 1;
+    padding-inline: 0.4rem;
+  }
+
+  .result-stats {
+    grid-template-columns: 1fr;
   }
 
   .secondary-button {

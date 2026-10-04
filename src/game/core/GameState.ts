@@ -47,6 +47,10 @@ export interface ProjectileState {
 }
 
 export interface GameState {
+  status: 'running' | 'ended'
+  endReason: 'timeout' | 'player_destroyed' | null
+  elapsedTimeSeconds: number
+  remainingTimeSeconds: number
   player: PlayerState
   enemies: EnemyState[]
   projectiles: ProjectileState[]
@@ -68,6 +72,10 @@ export function createInitialGameState(config: GameConfig): GameState {
   const initialSpawn = spawnInitialEnemy(player, config)
 
   return {
+    status: 'running',
+    endReason: null,
+    elapsedTimeSeconds: 0,
+    remainingTimeSeconds: config.match.sessionDurationSeconds,
     player,
     enemies: initialSpawn.enemies,
     projectiles: [],
@@ -86,6 +94,19 @@ export function updateGameState(
   deltaSeconds: number,
   config: GameConfig,
 ): GameState {
+  if (state.status === 'ended') {
+    return state
+  }
+
+  const elapsedTimeSeconds = Math.min(
+    config.match.sessionDurationSeconds,
+    state.elapsedTimeSeconds + deltaSeconds,
+  )
+  const remainingTimeSeconds = Math.max(
+    0,
+    config.match.sessionDurationSeconds - elapsedTimeSeconds,
+  )
+
   const turnDirection = Number(input.turnRight) - Number(input.turnLeft)
   const candidateRotation = normalizeAngle(
     state.player.rotation +
@@ -266,15 +287,28 @@ export function updateGameState(
     rightBroadsideCooldownRemaining = config.broadside.cooldownSeconds
   }
 
-  const spawnUpdateResult = updateSpawning(
-    enemies,
-    state.spawn,
-    player,
-    deltaSeconds,
-    config,
-  )
+  const spawnUpdateResult =
+    remainingTimeSeconds === 0
+      ? { enemies, spawnState: state.spawn }
+      : updateSpawning(
+          enemies,
+          state.spawn,
+          player,
+          deltaSeconds,
+          config,
+        )
+  const endReason =
+    player.health <= 0
+      ? ('player_destroyed' as const)
+      : remainingTimeSeconds === 0
+        ? ('timeout' as const)
+        : null
 
   return {
+    status: endReason ? 'ended' : 'running',
+    endReason,
+    elapsedTimeSeconds,
+    remainingTimeSeconds,
     player,
     enemies: spawnUpdateResult.enemies,
     projectiles,

@@ -7,6 +7,9 @@ export interface GameConfig {
     fixedStepSeconds: number
     maxFrameDeltaSeconds: number
   }
+  match: {
+    sessionDurationSeconds: number
+  }
   player: {
     maxHealth: number
     movementSpeed: number
@@ -80,6 +83,9 @@ export const GAME_CONFIG: GameConfig = {
   loop: {
     fixedStepSeconds: 1 / 60,
     maxFrameDeltaSeconds: 0.1,
+  },
+  match: {
+    sessionDurationSeconds: 120,
   },
   player: {
     maxHealth: 100,

@@ -1,6 +1,10 @@
 import type { GameState } from '../core/GameState'
 
 export interface GameTestSnapshot {
+  status: 'running' | 'ended'
+  endReason: 'timeout' | 'player_destroyed' | null
+  elapsedTimeSeconds: number
+  remainingTimeSeconds: number
   player: {
     x: number
     y: number
@@ -34,6 +38,8 @@ interface GameTestBridge {
   placePlayer: (setup: PlayerTestSetup) => void
   placeChaser: (setup: ChaserTestSetup) => void
   placeShooter: (setup: ShooterTestSetup) => void
+  setRemainingTime: (seconds: number) => void
+  setPlayerHealth: (health: number) => void
 }
 
 interface PlayerTestSetup {
@@ -64,6 +70,8 @@ export function installGameTestBridge(
   placePlayer: (setup: PlayerTestSetup) => void,
   placeChaser: (setup: ChaserTestSetup) => void,
   placeShooter: (setup: ShooterTestSetup) => void,
+  setRemainingTime: (seconds: number) => void,
+  setPlayerHealth: (health: number) => void,
 ) {
   if (import.meta.env.MODE !== 'test') {
     return () => {}
@@ -74,6 +82,10 @@ export function installGameTestBridge(
       const state = readState()
 
       return {
+        status: state.status,
+        endReason: state.endReason,
+        elapsedTimeSeconds: state.elapsedTimeSeconds,
+        remainingTimeSeconds: state.remainingTimeSeconds,
         player: { ...state.player },
         enemies: state.enemies.map((enemy) => ({ ...enemy })),
         projectiles: state.projectiles.map((projectile) => ({
@@ -95,6 +107,8 @@ export function installGameTestBridge(
     placePlayer,
     placeChaser,
     placeShooter,
+    setRemainingTime,
+    setPlayerHealth,
   }
 
   window.__GAME_TEST__ = bridge

@@ -21,6 +21,22 @@ The current player update is a deterministic TypeScript function: the same
 state, input, delta, and configuration produce the same next state. PixiJS reads
 the resulting state but does not define movement rules.
 
+## Match lifecycle and React HUD
+
+`GameState` owns the match status, elapsed active time, remaining time, and end
+reason. The configured 120-second session ends with `timeout`; reaching zero
+health ends it with `player_destroyed`. Once ended, the update function returns
+the same frozen state, and the PixiJS ticker no longer advances the `GameLoop`.
+This stops movement, attacks, damage, cooldowns, scoring, and spawning at their
+source instead of relying on a visual overlay to block the player.
+
+PixiJS publishes a small UI snapshot to React every 250 milliseconds and
+immediately when match status changes. React uses that snapshot for the semantic
+health, score, and time HUD and the result dialog. The continuous entity state
+remains outside React, avoiding 60 React renders per second. `Play again`
+remounts `GameCanvas`, so the normal lifecycle cleanup destroys the old runtime
+before a fresh match is created.
+
 ## Coordinate system and resize
 
 The simulation uses a fixed logical arena of `1280 x 720` units. The PixiJS

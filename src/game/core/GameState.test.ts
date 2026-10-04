@@ -307,4 +307,68 @@ describe('updateGameState', () => {
         ),
     )
   })
+
+  it('ends the match when the configured active time reaches zero', () => {
+    const shortMatchConfig = {
+      ...GAME_CONFIG,
+      match: { sessionDurationSeconds: 0.1 },
+      spawn: { ...GAME_CONFIG.spawn, intervalSeconds: 0.1 },
+    }
+    const state = createInitialGameState(shortMatchConfig)
+
+    const endedState = updateGameState(
+      state,
+      NO_INPUT,
+      0.1,
+      shortMatchConfig,
+    )
+
+    expect(endedState.status).toBe('ended')
+    expect(endedState.endReason).toBe('timeout')
+    expect(endedState.elapsedTimeSeconds).toBe(0.1)
+    expect(endedState.remainingTimeSeconds).toBe(0)
+    expect(endedState.enemies).toHaveLength(1)
+  })
+
+  it('ends the match when a Chaser removes the player last health', () => {
+    const state = createInitialGameState(GAME_CONFIG)
+    state.player.health = GAME_CONFIG.chaser.collisionDamage
+    state.enemies = [
+      {
+        id: 1,
+        type: 'chaser',
+        x: state.player.x,
+        y: state.player.y,
+        rotation: 0,
+        health: GAME_CONFIG.chaser.maxHealth,
+      },
+    ]
+
+    const endedState = updateGameState(
+      state,
+      NO_INPUT,
+      GAME_CONFIG.loop.fixedStepSeconds,
+      GAME_CONFIG,
+    )
+
+    expect(endedState.player.health).toBe(0)
+    expect(endedState.status).toBe('ended')
+    expect(endedState.endReason).toBe('player_destroyed')
+  })
+
+  it('returns the frozen state after the match has ended', () => {
+    const state = createInitialGameState(GAME_CONFIG)
+    state.status = 'ended'
+    state.endReason = 'timeout'
+    state.remainingTimeSeconds = 0
+
+    const frozenState = updateGameState(
+      state,
+      { ...NO_INPUT, forward: true, fireFront: true },
+      1,
+      GAME_CONFIG,
+    )
+
+    expect(frozenState).toBe(state)
+  })
 })

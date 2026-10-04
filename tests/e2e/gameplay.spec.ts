@@ -53,6 +53,54 @@ test('spawns the guaranteed Chaser first and Shooter second', async ({ page }) =
   expect(spawnedState.enemies[1]).toMatchObject({ id: 2, type: 'shooter' })
 })
 
+test('ends by timeout, freezes the match, and restarts cleanly', async ({ page }) => {
+  await startGame(page)
+  await page.evaluate(() => window.__GAME_TEST__?.setRemainingTime(0.05))
+
+  await expect(
+    page.getByRole('heading', { name: 'Time is up!' }),
+  ).toBeVisible()
+
+  const endedState = await readGameState(page)
+  expect(endedState.status).toBe('ended')
+  expect(endedState.endReason).toBe('timeout')
+  expect(endedState.remainingTimeSeconds).toBe(0)
+
+  await page.getByRole('button', { name: 'Play again' }).click()
+  await page.waitForFunction(() => {
+    const state = window.__GAME_TEST__?.getState()
+    return state?.status === 'running' && state.remainingTimeSeconds > 119
+  })
+
+  const restartedState = await readGameState(page)
+  expect(restartedState.player.health).toBe(100)
+  expect(restartedState.score).toBe(0)
+  expect(restartedState.enemies).toHaveLength(1)
+  await expect(page.locator('canvas')).toHaveCount(1)
+})
+
+test('ends the match when enemy damage destroys the player', async ({ page }) => {
+  await startGame(page)
+  await page.evaluate(() => {
+    window.__GAME_TEST__?.setPlayerHealth(10)
+    window.__GAME_TEST__?.placeShooter({
+      x: 640,
+      y: 600,
+      rotation: 0,
+      health: 3,
+    })
+  })
+
+  await expect(
+    page.getByRole('heading', { name: 'Your ship was destroyed!' }),
+  ).toBeVisible()
+
+  const endedState = await readGameState(page)
+  expect(endedState.status).toBe('ended')
+  expect(endedState.endReason).toBe('player_destroyed')
+  expect(endedState.player.health).toBe(0)
+})
+
 test('moves and rotates through real keyboard input', async ({ page }) => {
   await startGame(page)
   const initialState = await readGameState(page)
