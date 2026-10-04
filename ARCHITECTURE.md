@@ -151,6 +151,7 @@ scene recreation.
 
 Test mode installs a `window.__GAME_TEST__` bridge. Playwright uses real keyboard
 events and production rules; the bridge returns state copies and can place a
-known Chaser for deterministic combat setup. It does not invoke damage or force
-outcomes. Cleanup removes the bridge with the rest of the game runtime. Vite
-eliminates it from normal production builds.
+known player or Chaser for deterministic collision and combat setup. It does
+not invoke movement, damage, collision, or force outcomes. Cleanup removes the
+bridge with the rest of the game runtime. Vite eliminates it from normal
+production builds.

@@ -181,14 +181,15 @@ test('fires three projectiles from each broadside', async ({ page }) => {
     expect(projectile.direction).toBeCloseTo(-Math.PI / 2)
   }
 
+  await startGame(page)
   await page.keyboard.press('e')
   await page.waitForFunction(
-    () => (window.__GAME_TEST__?.getState().projectiles.length ?? 0) === 6,
+    () => (window.__GAME_TEST__?.getState().projectiles.length ?? 0) === 3,
   )
 
-  const bothSidesState = await readGameState(page)
-  expect(bothSidesState.projectiles).toHaveLength(6)
-  for (const projectile of bothSidesState.projectiles.slice(3)) {
+  const rightState = await readGameState(page)
+  expect(rightState.projectiles).toHaveLength(3)
+  for (const projectile of rightState.projectiles) {
     expect(projectile.direction).toBeCloseTo(Math.PI / 2)
   }
 })
@@ -206,13 +207,17 @@ test('blocks the player and projectiles at the island', async ({ page }) => {
     )
   })
 
-  await page.keyboard.down('d')
-  await page.waitForFunction(
-    () => (window.__GAME_TEST__?.getState().player.rotation ?? 0) >= 1.4,
-  )
-  await page.keyboard.up('d')
+  await page.evaluate(() => {
+    window.__GAME_TEST__?.placePlayer({
+      x: 700,
+      y: 276,
+      rotation: Math.PI / 2,
+    })
+  })
   await page.keyboard.down('w')
-  await page.waitForTimeout(1_000)
+  await page.waitForFunction(
+    () => (window.__GAME_TEST__?.getState().player.x ?? 0) >= 756,
+  )
   await page.keyboard.up('w')
 
   const blockedState = await readGameState(page)

@@ -271,6 +271,15 @@ export function GameCanvas() {
           (setup) => {
             gameState = {
               ...gameState,
+              player: {
+                ...gameState.player,
+                ...setup,
+              },
+            }
+          },
+          (setup) => {
+            gameState = {
+              ...gameState,
               enemies: [
                 {
                   id: 1,

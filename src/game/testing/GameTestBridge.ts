@@ -30,7 +30,14 @@ export interface GameTestSnapshot {
 
 interface GameTestBridge {
   getState: () => GameTestSnapshot
+  placePlayer: (setup: PlayerTestSetup) => void
   placeChaser: (setup: ChaserTestSetup) => void
+}
+
+interface PlayerTestSetup {
+  x: number
+  y: number
+  rotation: number
 }
 
 interface ChaserTestSetup {
@@ -48,6 +55,7 @@ declare global {
 
 export function installGameTestBridge(
   readState: () => GameState,
+  placePlayer: (setup: PlayerTestSetup) => void,
   placeChaser: (setup: ChaserTestSetup) => void,
 ) {
   if (import.meta.env.MODE !== 'test') {
@@ -77,6 +85,7 @@ export function installGameTestBridge(
         score: state.score,
       }
     },
+    placePlayer,
     placeChaser,
   }
 
