@@ -32,6 +32,16 @@ body {
   background-attachment: fixed;
 }
 
+.boot-status {
+  display: grid;
+  min-height: 100svh;
+  place-items: center;
+  color: #80d8e5;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 button,
 canvas {
   -webkit-tap-highlight-color: transparent;

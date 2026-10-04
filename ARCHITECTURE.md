@@ -57,6 +57,28 @@ all systems use this snapshot instead of reading local storage or mutable React
 state. Therefore, changing persisted options cannot alter a match already in
 progress; Play Again creates a new snapshot from the latest options.
 
+## Ranking data flow
+
+The Ranking screen owns only local pagination UI. TanStack Query owns remote
+loading, error, cache, retry, and background-fetch state under the key
+`["ranking", configKey, page]`. Its query function delegates HTTP work to the
+central Axios client instead of calling Axios from React components. The query
+signal is passed to Axios so navigation or a newer query can cancel obsolete
+requests.
+
+`configKey` is a deterministic, versioned representation of the settings that
+affect match comparability. The current form is
+`v1:duration=<seconds>:spawn=<seconds>`. The MSW ranking handler filters records
+by that key, orders them by descending score with deterministic tie breakers,
+and returns a typed paginated response.
+
+MSW starts before React mounts and uses the generated worker from `public/`, so
+the same REST boundary is present in development, Playwright, preview, and the
+eventual static deployment. A small HTML bootstrap status remains visible while
+the worker initializes. This milestone implements the normal ranking scenario;
+scenario selection, persisted mock records, failures, and variable latency are
+intentionally deferred.
+
 ## Pause lifecycle
 
 Pause is represented by `GameState.status === "paused"`, not by a visual-only

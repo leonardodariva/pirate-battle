@@ -128,6 +128,7 @@ test('keeps the menu and result actions visible in mobile landscape', async ({
   await expect(page.getByRole('button', { name: 'Play' })).toBeInViewport()
   await expect(page.getByRole('button', { name: 'Options' })).toBeInViewport()
   await expect(page.getByRole('button', { name: 'Controls' })).toBeInViewport()
+  await expect(page.getByRole('button', { name: 'Ranking' })).toBeInViewport()
 
   await page.getByRole('button', { name: 'Play' }).click()
   await page.waitForFunction(() => window.__GAME_TEST__ !== undefined)

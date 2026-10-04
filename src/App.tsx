@@ -12,13 +12,14 @@ import {
 } from './game/rendering/GameCanvas'
 import { OptionsScreen } from './features/options/OptionsScreen'
 import { ControlsScreen } from './features/controls/ControlsScreen'
+import { RankingScreen } from './features/ranking/RankingScreen'
 import {
   loadGameOptions,
   saveGameOptions,
 } from './storage/gameOptionsStorage'
 import './App.css'
 
-type AppScreen = 'menu' | 'options' | 'controls' | 'game'
+type AppScreen = 'menu' | 'options' | 'controls' | 'ranking' | 'game'
 
 function App() {
   const [screen, setScreen] = useState<AppScreen>('menu')
@@ -161,6 +162,15 @@ function App() {
     return <ControlsScreen onBack={() => setScreen('menu')} />
   }
 
+  if (screen === 'ranking') {
+    return (
+      <RankingScreen
+        options={options}
+        onBack={() => setScreen('menu')}
+      />
+    )
+  }
+
   return (
     <main className="menu-screen">
       <section className="menu-card" aria-labelledby="game-title">
@@ -194,6 +204,12 @@ function App() {
             onClick={() => setScreen('controls')}
           >
             Controls
+          </button>
+          <button
+            className="secondary-button menu-options-button"
+            onClick={() => setScreen('ranking')}
+          >
+            Ranking
           </button>
         </div>
         <p className="menu-copy">Navigate. Explore. Survive.</p>

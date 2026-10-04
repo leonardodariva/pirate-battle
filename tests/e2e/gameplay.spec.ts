@@ -54,6 +54,25 @@ test('opens the controls guide and returns to the menu', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Play' })).toBeVisible()
 })
 
+test('loads and paginates the ranking through the mocked API', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Ranking' }).click()
+
+  await expect(page.getByRole('heading', { name: 'Ranking' })).toBeVisible()
+  await expect(page.getByRole('row').nth(1)).toContainText('Storm Jane')
+  await expect(page.getByRole('row').nth(1)).toContainText('42')
+  await expect(page.getByText('Page 1 of 3')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Next' }).click()
+  await expect(page.getByText('Page 2 of 3')).toBeVisible()
+  await expect(page.getByRole('row').nth(1)).toContainText('Reef Runner')
+
+  await page.getByRole('button', { name: 'Previous' }).click()
+  await expect(page.getByText('Page 1 of 3')).toBeVisible()
+})
+
 test('validates, persists, and snapshots gameplay options', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('button', { name: 'Options' }).click()
