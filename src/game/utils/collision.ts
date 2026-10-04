@@ -74,6 +74,63 @@ export function insetRectangle(
   }
 }
 
+export function expandRectangle(
+  rectangle: RectangleBounds,
+  amount: number,
+): RectangleBounds {
+  return {
+    x: rectangle.x - amount,
+    y: rectangle.y - amount,
+    width: rectangle.width + amount * 2,
+    height: rectangle.height + amount * 2,
+  }
+}
+
+export function segmentIntersectsRectangle(
+  startX: number,
+  startY: number,
+  endX: number,
+  endY: number,
+  rectangle: RectangleBounds,
+) {
+  const deltaX = endX - startX
+  const deltaY = endY - startY
+  let minimumTime = 0
+  let maximumTime = 1
+
+  const intersectsAxis = (
+    start: number,
+    delta: number,
+    minimum: number,
+    maximum: number,
+  ) => {
+    if (delta === 0) {
+      return start >= minimum && start <= maximum
+    }
+
+    const firstTime = (minimum - start) / delta
+    const secondTime = (maximum - start) / delta
+    minimumTime = Math.max(minimumTime, Math.min(firstTime, secondTime))
+    maximumTime = Math.min(maximumTime, Math.max(firstTime, secondTime))
+    return minimumTime <= maximumTime
+  }
+
+  return (
+    intersectsAxis(
+      startX,
+      deltaX,
+      rectangle.x,
+      rectangle.x + rectangle.width,
+    ) &&
+    intersectsAxis(
+      startY,
+      deltaY,
+      rectangle.y,
+      rectangle.y + rectangle.height,
+    )
+  )
+}
+
 function clamp(value: number, minimum: number, maximum: number) {
   return Math.min(Math.max(value, minimum), maximum)
 }

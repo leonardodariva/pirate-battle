@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 import {
   circleIntersectsRectangle,
   circlesIntersect,
+  expandRectangle,
   getRotatedCircleCenters,
   insetRectangle,
+  segmentIntersectsRectangle,
 } from './collision'
 
 const RECTANGLE = { x: 100, y: 100, width: 80, height: 60 }
@@ -31,6 +33,27 @@ describe('insetRectangle', () => {
       width: 60,
       height: 40,
     })
+  })
+})
+
+describe('expandRectangle', () => {
+  it('grows the rectangle equally on every side', () => {
+    expect(expandRectangle(RECTANGLE, 10)).toEqual({
+      x: 90,
+      y: 90,
+      width: 100,
+      height: 80,
+    })
+  })
+})
+
+describe('segmentIntersectsRectangle', () => {
+  it('detects a route crossing the rectangle', () => {
+    expect(segmentIntersectsRectangle(50, 130, 220, 130, RECTANGLE)).toBe(true)
+  })
+
+  it('accepts a route passing outside the rectangle', () => {
+    expect(segmentIntersectsRectangle(50, 80, 220, 80, RECTANGLE)).toBe(false)
   })
 })
 

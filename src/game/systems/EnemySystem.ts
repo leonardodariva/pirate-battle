@@ -1,7 +1,10 @@
 import type { GameConfig } from '../config/gameConfig'
 import {
   circleIntersectsRectangle,
+  expandRectangle,
   insetRectangle,
+  segmentIntersectsRectangle,
+  type RectangleBounds,
 } from '../utils/collision'
 
 export interface EnemyState {
@@ -17,6 +20,8 @@ interface TargetPosition {
   x: number
   y: number
 }
+
+const WAYPOINT_CLEARANCE = 12
 
 export function createInitialEnemies(config: GameConfig): EnemyState[] {
   return [
@@ -48,9 +53,10 @@ function updateChaser(
   deltaSeconds: number,
   config: GameConfig,
 ): EnemyState {
+  const navigationTarget = getNavigationTarget(enemy, target, config)
   const desiredRotation = Math.atan2(
-    target.x - enemy.x,
-    -(target.y - enemy.y),
+    navigationTarget.x - enemy.x,
+    -(navigationTarget.y - enemy.y),
   )
   const rotationDifference = normalizeAngle(
     desiredRotation - enemy.rotation,
@@ -84,6 +90,109 @@ function updateChaser(
     y,
     rotation,
   }
+}
+
+function getNavigationTarget(
+  enemy: EnemyState,
+  target: TargetPosition,
+  config: GameConfig,
+): TargetPosition {
+  const obstacles = config.islands.map((island) =>
+    expandRectangle(
+      insetRectangle(island, island.collisionInset),
+      config.chaser.collisionRadius,
+    ),
+  )
+  const blockingObstacle = obstacles.find((obstacle) =>
+    segmentIntersectsRectangle(
+      enemy.x,
+      enemy.y,
+      target.x,
+      target.y,
+      obstacle,
+    ),
+  )
+
+  if (!blockingObstacle) {
+    return target
+  }
+
+  const waypoints = getObstacleWaypoints(blockingObstacle)
+  const [topLeft, topRight, bottomRight, bottomLeft] = waypoints
+  const candidateRoutes = [
+    [topLeft],
+    [topRight],
+    [bottomRight],
+    [bottomLeft],
+    [topLeft, topRight],
+    [topRight, topLeft],
+    [topRight, bottomRight],
+    [bottomRight, topRight],
+    [bottomRight, bottomLeft],
+    [bottomLeft, bottomRight],
+    [bottomLeft, topLeft],
+    [topLeft, bottomLeft],
+  ]
+  const validRoutes = candidateRoutes.filter((route) =>
+    routeIsClear([enemy, ...route, target], obstacles),
+  )
+  const shortestRoute = validRoutes.reduce<TargetPosition[] | undefined>(
+    (shortest, route) =>
+      !shortest || routeLength([enemy, ...route, target]) <
+          routeLength([enemy, ...shortest, target])
+        ? route
+        : shortest,
+    undefined,
+  )
+
+  return shortestRoute?.[0] ?? target
+}
+
+function getObstacleWaypoints(obstacle: RectangleBounds) {
+  const left = obstacle.x - WAYPOINT_CLEARANCE
+  const right = obstacle.x + obstacle.width + WAYPOINT_CLEARANCE
+  const top = obstacle.y - WAYPOINT_CLEARANCE
+  const bottom = obstacle.y + obstacle.height + WAYPOINT_CLEARANCE
+
+  return [
+    { x: left, y: top },
+    { x: right, y: top },
+    { x: right, y: bottom },
+    { x: left, y: bottom },
+  ] as const
+}
+
+function routeIsClear(
+  route: TargetPosition[],
+  obstacles: RectangleBounds[],
+) {
+  return route.slice(1).every((point, index) => {
+    const previousPoint = route[index]
+
+    return (
+      previousPoint !== undefined &&
+      obstacles.every(
+        (obstacle) =>
+          !segmentIntersectsRectangle(
+            previousPoint.x,
+            previousPoint.y,
+            point.x,
+            point.y,
+            obstacle,
+          ),
+      )
+    )
+  })
+}
+
+function routeLength(route: TargetPosition[]) {
+  return route.slice(1).reduce((total, point, index) => {
+    const previousPoint = route[index]
+
+    return previousPoint
+      ? total + Math.hypot(point.x - previousPoint.x, point.y - previousPoint.y)
+      : total
+  }, 0)
 }
 
 function enemyCollidesWithIsland(

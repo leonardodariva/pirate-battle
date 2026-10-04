@@ -96,8 +96,15 @@ timestep. PixiJS mirrors enemies by stable id and does not implement AI rules.
 The Chaser uses its configured collision circle against each island's inset
 rectangle. Horizontal and vertical movement are resolved separately, matching
 the player's predictable sliding behavior and preventing enemies from crossing
-land. This is local collision avoidance rather than pathfinding: a Chaser can
-still become stuck when the direct route to the player is completely blocked.
+land.
+
+Before choosing its heading, the Chaser checks whether the straight segment to
+the player intersects an island expanded by the enemy radius. If blocked, it
+builds a small deterministic set of one- and two-corner routes around that
+rectangle, rejects routes whose segments cross land, and follows the shortest
+valid route. Once the direct segment is clear, it resumes pursuing the player.
+This is deliberately simpler than A*: it fits the current sparse arena but is
+not intended for complex maps with many tightly packed obstacles.
 
 Player death and periodic spawning will build on the same enemy state in
 following milestones.

@@ -92,26 +92,32 @@ test('moves the chaser toward the player', async ({ page }) => {
   expect(chasedState.enemies[0]?.rotation).not.toBe(0)
 })
 
-test('stops the chaser at the island instead of crossing it', async ({
+test('routes the chaser around the island instead of crossing it', async ({
   page,
 }) => {
   await startGame(page)
   await page.evaluate(() => {
-    window.__GAME_TEST__?.placeChaser({
-      x: 1_050,
+    window.__GAME_TEST__?.placePlayer({
+      x: 1_150,
       y: 276,
-      rotation: -Math.PI / 2,
+      rotation: 0,
+    })
+    window.__GAME_TEST__?.placeChaser({
+      x: 700,
+      y: 276,
+      rotation: Math.PI / 2,
       health: 3,
     })
   })
 
   await page.waitForFunction(() => {
     const enemy = window.__GAME_TEST__?.getState().enemies[0]
-    return enemy !== undefined && enemy.x < 1_010
-  })
+    return enemy !== undefined && enemy.x > 1_005
+  }, undefined, { timeout: 10_000 })
 
-  const blockedState = await readGameState(page)
-  expect(blockedState.enemies[0]?.x).toBeGreaterThan(1_005)
+  const routedState = await readGameState(page)
+  const enemyY = routedState.enemies[0]?.y ?? 276
+  expect(enemyY < 167 || enemyY > 373).toBe(true)
 })
 
 test('applies chaser collision damage once without awarding score', async ({
