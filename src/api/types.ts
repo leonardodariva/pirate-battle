@@ -25,6 +25,16 @@ export interface MatchHistoryEntry {
   configuration: MatchConfigurationSnapshot
 }
 
+export interface MatchRecord extends MatchHistoryEntry {
+  playerName: string
+  configKey: string
+}
+
+export interface SubmitMatchResponse {
+  match: MatchRecord
+  created: boolean
+}
+
 export interface PaginatedResponse<T> {
   items: T[]
   page: number

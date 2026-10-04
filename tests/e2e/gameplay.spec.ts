@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import type { GameTestSnapshot } from '../../src/game/testing/GameTestBridge'
 import { GAME_OPTIONS_STORAGE_KEY } from '../../src/storage/gameOptionsStorage'
+import { CONFIRMED_MATCHES_STORAGE_KEY } from '../../src/mocks/mockMatchStore'
 
 async function startGame(page: Page) {
   await page.goto('/')
@@ -93,6 +94,82 @@ test('loads the current player match history and paginates it', async ({
 
   await page.getByRole('button', { name: 'Back' }).click()
   await expect(page.getByRole('button', { name: 'Play' })).toBeVisible()
+})
+
+test('registers a completed match and includes it in history', async ({
+  page,
+}) => {
+  await startGame(page)
+  await page.evaluate(() => window.__GAME_TEST__?.setRemainingTime(0.05))
+
+  await expect(
+    page.getByRole('heading', { name: 'Time is up!' }),
+  ).toBeVisible()
+  await expect(page.getByText('Confirmed', { exact: true })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Main menu' }).click()
+  await page.getByRole('button', { name: 'Match history' }).click()
+
+  const newestMatch = page.getByRole('row').nth(1)
+  await expect(newestMatch).toContainText('0')
+  await expect(newestMatch).toContainText('Time up')
+})
+
+test('returns an existing record when the same matchId is submitted twice', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await expect(page.getByRole('button', { name: 'Play' })).toBeVisible()
+
+  const result = await page.evaluate(
+    async ({ storageKey }) => {
+      const match = {
+        matchId: 'idempotent-e2e-match',
+        playerId: 'idempotent-player',
+        playerName: 'Retry Captain',
+        score: 17,
+        durationSeconds: 120,
+        endReason: 'timeout',
+        completedAt: '2026-10-04T12:00:00Z',
+        configKey: 'v1:duration=120:spawn=5',
+        configuration: {
+          sessionDurationSeconds: 120,
+          enemySpawnIntervalSeconds: 5,
+        },
+      }
+      const firstResponse = await fetch('/api/matches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(match),
+      })
+      const firstBody = await firstResponse.json()
+      const secondResponse = await fetch('/api/matches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...match, score: 999 }),
+      })
+      const secondBody = await secondResponse.json()
+      const storedMatches = JSON.parse(
+        window.localStorage.getItem(storageKey) ?? '[]',
+      )
+
+      return {
+        firstStatus: firstResponse.status,
+        firstBody,
+        secondStatus: secondResponse.status,
+        secondBody,
+        storedMatches,
+      }
+    },
+    { storageKey: CONFIRMED_MATCHES_STORAGE_KEY },
+  )
+
+  expect(result.firstStatus).toBe(201)
+  expect(result.firstBody.created).toBe(true)
+  expect(result.secondStatus).toBe(200)
+  expect(result.secondBody.created).toBe(false)
+  expect(result.secondBody.match.score).toBe(17)
+  expect(result.storedMatches).toHaveLength(1)
 })
 
 test('validates, persists, and snapshots gameplay options', async ({ page }) => {

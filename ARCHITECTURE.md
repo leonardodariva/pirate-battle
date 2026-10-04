@@ -79,6 +79,21 @@ contains the score, effective duration, end reason, completion date, and the
 configuration snapshot used by that match. The browser creates the player
 identity once with `crypto.randomUUID()` and reuses it after refresh.
 
+## Match registration and idempotency
+
+Play creates one `matchId` with `crypto.randomUUID()`. When the simulation first
+reports an ended state, React creates an immutable `MatchRecord` from that id,
+the player identity, final score and duration, end reason, completion date, and
+the match configuration snapshot. A TanStack Query mutation sends the record
+through the central Axios client to `POST /api/matches` and invalidates both
+Ranking and Match History after confirmation.
+
+The mock store persists confirmed records in local storage. Registration checks
+`matchId` before inserting: the first request returns `201` and a retry returns
+the original record with `200`, leaving only one stored match. This is the
+idempotency foundation required for safe retries. Persisting failed submissions
+and selectable failure/timeout scenarios remain deferred to the next milestone.
+
 MSW starts before React mounts and uses the generated worker from `public/`, so
 the same REST boundary is present in development, Playwright, preview, and the
 eventual static deployment. A small HTML bootstrap status remains visible while

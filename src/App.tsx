@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import jungleGamingLogoUrl from '../assets/logo_jungle_gaming.svg'
 import menuTitleUrl from '../assets/png/default/ui/menu/title_pirate_battle.png'
+import type { MatchRecord } from './api/types'
+import { createConfigKey } from './game/config/configKey'
 import { GAME_CONFIG, type GameConfig } from './game/config/gameConfig'
 import {
   createMatchConfig,
@@ -14,6 +16,7 @@ import { OptionsScreen } from './features/options/OptionsScreen'
 import { ControlsScreen } from './features/controls/ControlsScreen'
 import { RankingScreen } from './features/ranking/RankingScreen'
 import { MatchHistoryScreen } from './features/history/MatchHistoryScreen'
+import { useMatchRegistration } from './features/results/useMatchRegistration'
 import {
   loadGameOptions,
   saveGameOptions,
@@ -37,12 +40,18 @@ function App() {
     createMatchConfig(GAME_CONFIG, options),
   )
   const [matchKey, setMatchKey] = useState(0)
+  const [matchId, setMatchId] = useState(() => crypto.randomUUID())
   const [pauseRequestId, setPauseRequestId] = useState(0)
   const [gameUiState, setGameUiState] = useState<GameUiState | null>(null)
+  const [completedMatch, setCompletedMatch] = useState<MatchRecord | null>(null)
+  const registration = useMatchRegistration({ match: completedMatch })
 
   const startMatch = () => {
     setMatchConfig(createMatchConfig(GAME_CONFIG, options))
+    setMatchId(crypto.randomUUID())
     setGameUiState(null)
+    setCompletedMatch(null)
+    registration.reset()
     setPauseRequestId(0)
     setMatchKey((currentKey) => currentKey + 1)
     setScreen('game')
@@ -57,6 +66,39 @@ function App() {
     saveGameOptions(nextOptions)
     setOptions(nextOptions)
     setScreen('menu')
+  }
+
+  const handleGameStateChange = (nextState: GameUiState) => {
+    setGameUiState(nextState)
+
+    if (nextState.status !== 'ended' || nextState.endReason === null) {
+      return
+    }
+
+    const endReason = nextState.endReason
+
+    setCompletedMatch((currentMatch) => {
+      if (currentMatch?.matchId === matchId) {
+        return currentMatch
+      }
+
+      const configuration = {
+        sessionDurationSeconds: matchConfig.match.sessionDurationSeconds,
+        enemySpawnIntervalSeconds: matchConfig.spawn.intervalSeconds,
+      }
+
+      return {
+        matchId,
+        playerId: player.playerId,
+        playerName: player.playerName,
+        score: nextState.score,
+        durationSeconds: Math.round(nextState.elapsedTimeSeconds),
+        endReason,
+        completedAt: new Date().toISOString(),
+        configKey: createConfigKey(configuration),
+        configuration,
+      }
+    })
   }
 
   if (screen === 'game') {
@@ -107,7 +149,7 @@ function App() {
             config={matchConfig}
             pauseRequestId={pauseRequestId}
             touchControlsEnabled={gameUiState?.status !== 'ended'}
-            onStateChange={setGameUiState}
+            onStateChange={handleGameStateChange}
           />
 
           {gameUiState?.status === 'ended' && (
@@ -130,7 +172,7 @@ function App() {
                 </div>
                 <div>
                   <dt>Registration</dt>
-                  <dd>Not submitted</dd>
+                  <dd>{getRegistrationLabel(registration.status)}</dd>
                 </div>
               </dl>
               <div className="result-actions">
@@ -243,3 +285,18 @@ function App() {
 }
 
 export default App
+
+function getRegistrationLabel(
+  status: 'idle' | 'pending' | 'error' | 'success',
+) {
+  switch (status) {
+    case 'pending':
+      return 'Submitting...'
+    case 'success':
+      return 'Confirmed'
+    case 'error':
+      return 'Failed'
+    default:
+      return 'Preparing...'
+  }
+}

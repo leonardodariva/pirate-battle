@@ -1,5 +1,11 @@
 import { delay, http, HttpResponse } from 'msw'
+import type { RankingEntry } from '../api/types'
 import { createHistoryFixtures, getHistoryPage } from './historyData'
+import {
+  isMatchRecord,
+  readConfirmedMatches,
+  registerMatch,
+} from './mockMatchStore'
 import { getRankingPage, rankingFixtures } from './rankingData'
 
 const PAGE_SIZE_LIMIT = 20
@@ -22,8 +28,24 @@ export const handlers = [
     }
 
     await delay(180)
+    const confirmedRankingEntries: RankingEntry[] = readConfirmedMatches().map(
+      (match) => ({
+        matchId: match.matchId,
+        playerId: match.playerId,
+        playerName: match.playerName,
+        score: match.score,
+        durationSeconds: match.durationSeconds,
+        completedAt: match.completedAt,
+        configKey: match.configKey,
+      }),
+    )
     return HttpResponse.json(
-      getRankingPage(rankingFixtures, configKey, page, pageSize),
+      getRankingPage(
+        [...rankingFixtures, ...confirmedRankingEntries],
+        configKey,
+        page,
+        pageSize,
+      ),
     )
   }),
   http.get('/api/history', async ({ request }) => {
@@ -43,10 +65,27 @@ export const handlers = [
     }
 
     await delay(180)
-    const records = createHistoryFixtures(playerId)
+    const records = [
+      ...createHistoryFixtures(playerId),
+      ...readConfirmedMatches(),
+    ]
     return HttpResponse.json(
       getHistoryPage(records, playerId, page, pageSize),
     )
+  }),
+  http.post('/api/matches', async ({ request }) => {
+    const body: unknown = await request.json()
+
+    if (!isMatchRecord(body)) {
+      return HttpResponse.json(
+        { message: 'A valid match record is required.' },
+        { status: 400 },
+      )
+    }
+
+    await delay(180)
+    const result = registerMatch(body)
+    return HttpResponse.json(result, { status: result.created ? 201 : 200 })
   }),
 ]
 
