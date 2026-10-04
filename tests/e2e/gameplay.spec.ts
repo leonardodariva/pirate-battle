@@ -71,6 +71,32 @@ test('fires the front cannon through real keyboard input', async ({ page }) => {
   expect(firedState.projectiles[0]?.y).toBeLessThan(initialState.player.y)
 })
 
+test('fires three projectiles from each broadside', async ({ page }) => {
+  await startGame(page)
+
+  await page.keyboard.press('q')
+  await page.waitForFunction(
+    () => (window.__GAME_TEST__?.getState().projectiles.length ?? 0) === 3,
+  )
+
+  const leftState = await readGameState(page)
+  expect(leftState.projectiles).toHaveLength(3)
+  for (const projectile of leftState.projectiles) {
+    expect(projectile.direction).toBeCloseTo(-Math.PI / 2)
+  }
+
+  await page.keyboard.press('e')
+  await page.waitForFunction(
+    () => (window.__GAME_TEST__?.getState().projectiles.length ?? 0) === 6,
+  )
+
+  const bothSidesState = await readGameState(page)
+  expect(bothSidesState.projectiles).toHaveLength(6)
+  for (const projectile of bothSidesState.projectiles.slice(3)) {
+    expect(projectile.direction).toBeCloseTo(Math.PI / 2)
+  }
+})
+
 test('keeps the player inside the arena and preserves state on resize', async ({
   page,
 }) => {

@@ -33,8 +33,9 @@ letterboxed instead of stretching or cropping the arena.
 
 `KeyboardInput` stores currently pressed gameplay keys and exposes a small input
 snapshot (`forward`, `turnLeft`, and `turnRight`). It also queues the edge of a
-`Space` press until one simulation step consumes it. This prevents a held key
-from becoming a new shot on every fixed update. Input does not mutate game state.
+`Space`, `Q`, or `E` press until one simulation step consumes it. This prevents
+a held key from becoming a new shot on every fixed update. Input does not mutate
+game state.
 This makes simultaneous input possible and lets future touch controls produce
 the same snapshot without changing movement logic. Key state is cleared on
 window blur and all listeners are removed when gameplay unmounts.
@@ -55,6 +56,11 @@ and are removed when their lifetime expires or they leave the logical arena.
 PixiJS keeps a sprite map keyed by projectile id. Rendering creates and removes
 sprites to mirror the simulation, but it does not decide when a shot is allowed
 or how it moves. The projectile uses the official `cannon_ball.png` asset.
+
+Left and right broadsides have independent cooldowns. Each creates three
+projectiles from evenly spaced points along the ship, all traveling parallel to
+the selected side. The spacing and weapon balance remain centralized in game
+configuration.
 
 ## Asset strategy
 

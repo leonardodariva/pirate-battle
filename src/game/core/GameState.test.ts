@@ -1,12 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import { GAME_CONFIG } from '../config/gameConfig'
-import { createInitialGameState, updateGameState } from './GameState'
+import {
+  createInitialGameState,
+  updateGameState,
+  type ProjectileState,
+} from './GameState'
 
 const NO_INPUT = {
   forward: false,
   turnLeft: false,
   turnRight: false,
   fireFront: false,
+  fireLeftBroadside: false,
+  fireRightBroadside: false,
 }
 
 describe('updateGameState', () => {
@@ -44,7 +50,14 @@ describe('updateGameState', () => {
 
     const nextState = updateGameState(
       state,
-      { forward: true, turnLeft: false, turnRight: true, fireFront: false },
+      {
+        forward: true,
+        turnLeft: false,
+        turnRight: true,
+        fireFront: false,
+        fireLeftBroadside: false,
+        fireRightBroadside: false,
+      },
       0.25,
       GAME_CONFIG,
     )
@@ -74,7 +87,14 @@ describe('updateGameState', () => {
 
     const nextState = updateGameState(
       state,
-      { forward: false, turnLeft: true, turnRight: true, fireFront: false },
+      {
+        forward: false,
+        turnLeft: true,
+        turnRight: true,
+        fireFront: false,
+        fireLeftBroadside: false,
+        fireRightBroadside: false,
+      },
       1,
       GAME_CONFIG,
     )
@@ -170,5 +190,64 @@ describe('updateGameState', () => {
     )
 
     expect(nextState.projectiles).toHaveLength(0)
+  })
+
+  it('fires three parallel projectiles from the left broadside', () => {
+    const state = createInitialGameState(GAME_CONFIG)
+
+    const nextState = updateGameState(
+      state,
+      { ...NO_INPUT, fireLeftBroadside: true },
+      GAME_CONFIG.loop.fixedStepSeconds,
+      GAME_CONFIG,
+    )
+
+    expect(nextState.projectiles).toHaveLength(3)
+    expect(nextState.projectiles.map((projectile) => projectile.id)).toEqual([
+      1, 2, 3,
+    ])
+    expect(
+      nextState.projectiles.every(
+        (projectile) => projectile.direction === -Math.PI / 2,
+      ),
+    ).toBe(true)
+    expect(new Set(nextState.projectiles.map((projectile) => projectile.y)).size)
+      .toBe(3)
+  })
+
+  it('keeps left and right broadside cooldowns independent', () => {
+    const leftBroadsideState = updateGameState(
+      createInitialGameState(GAME_CONFIG),
+      { ...NO_INPUT, fireLeftBroadside: true },
+      GAME_CONFIG.loop.fixedStepSeconds,
+      GAME_CONFIG,
+    )
+    const repeatedLeftState = updateGameState(
+      leftBroadsideState,
+      { ...NO_INPUT, fireLeftBroadside: true },
+      GAME_CONFIG.loop.fixedStepSeconds,
+      GAME_CONFIG,
+    )
+    const rightBroadsideState = updateGameState(
+      repeatedLeftState,
+      { ...NO_INPUT, fireRightBroadside: true },
+      GAME_CONFIG.loop.fixedStepSeconds,
+      GAME_CONFIG,
+    )
+
+    expect(repeatedLeftState.projectiles).toHaveLength(3)
+    expect(rightBroadsideState.projectiles).toHaveLength(6)
+    expect(rightBroadsideState.leftBroadsideCooldownRemaining).toBeGreaterThan(
+      0,
+    )
+    expect(rightBroadsideState.rightBroadsideCooldownRemaining).toBeGreaterThan(
+      0,
+    )
+    expect(rightBroadsideState.projectiles.slice(3)).toSatisfy(
+      (projectiles: ProjectileState[]) =>
+        projectiles.every(
+          (projectile) => projectile.direction === Math.PI / 2,
+        ),
+    )
   })
 })

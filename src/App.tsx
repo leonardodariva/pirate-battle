@@ -29,6 +29,8 @@ function App() {
           <span><kbd>W</kbd> / <kbd>↑</kbd> Move forward</span>
           <span><kbd>A</kbd> <kbd>D</kbd> / <kbd>←</kbd> <kbd>→</kbd> Rotate</span>
           <span><kbd>Space</kbd> Front cannon</span>
+          <span><kbd>Q</kbd> Left broadside</span>
+          <span><kbd>E</kbd> Right broadside</span>
         </div>
       </main>
     )

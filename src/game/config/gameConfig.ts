@@ -19,6 +19,14 @@ export interface GameConfig {
     projectileLifetimeSeconds: number
     spawnOffset: number
   }
+  broadside: {
+    cooldownSeconds: number
+    projectileSpeed: number
+    projectileDamage: number
+    projectileLifetimeSeconds: number
+    spawnOffset: number
+    cannonSpacing: number
+  }
 }
 
 export const GAME_CONFIG: GameConfig = {
@@ -41,5 +49,13 @@ export const GAME_CONFIG: GameConfig = {
     projectileDamage: 1,
     projectileLifetimeSeconds: 1.5,
     spawnOffset: 58,
+  },
+  broadside: {
+    cooldownSeconds: 1.2,
+    projectileSpeed: 460,
+    projectileDamage: 1,
+    projectileLifetimeSeconds: 1.5,
+    spawnOffset: 38,
+    cannonSpacing: 24,
   },
 }

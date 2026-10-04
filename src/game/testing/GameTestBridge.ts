@@ -14,6 +14,8 @@ export interface GameTestSnapshot {
     owner: 'player' | 'enemy'
   }>
   frontCannonCooldownRemaining: number
+  leftBroadsideCooldownRemaining: number
+  rightBroadsideCooldownRemaining: number
 }
 
 interface GameTestBridge {
@@ -46,6 +48,10 @@ export function installGameTestBridge(readState: () => GameState) {
         })),
         frontCannonCooldownRemaining:
           state.frontCannonCooldownRemaining,
+        leftBroadsideCooldownRemaining:
+          state.leftBroadsideCooldownRemaining,
+        rightBroadsideCooldownRemaining:
+          state.rightBroadsideCooldownRemaining,
       }
     },
   }

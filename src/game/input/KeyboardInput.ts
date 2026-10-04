@@ -8,12 +8,16 @@ const GAMEPLAY_KEYS = new Set([
   'ArrowLeft',
   'ArrowRight',
   'Space',
+  'KeyQ',
+  'KeyE',
 ])
 
 export class KeyboardInput {
   private readonly pressedKeys = new Set<string>()
   private readonly target: Window
   private fireFrontQueued = false
+  private fireLeftBroadsideQueued = false
+  private fireRightBroadsideQueued = false
 
   constructor(target: Window) {
     this.target = target
@@ -24,7 +28,11 @@ export class KeyboardInput {
 
   read(): PlayerInput {
     const fireFront = this.fireFrontQueued
+    const fireLeftBroadside = this.fireLeftBroadsideQueued
+    const fireRightBroadside = this.fireRightBroadsideQueued
     this.fireFrontQueued = false
+    this.fireLeftBroadsideQueued = false
+    this.fireRightBroadsideQueued = false
 
     return {
       forward:
@@ -34,6 +42,8 @@ export class KeyboardInput {
       turnRight:
         this.pressedKeys.has('KeyD') || this.pressedKeys.has('ArrowRight'),
       fireFront,
+      fireLeftBroadside,
+      fireRightBroadside,
     }
   }
 
@@ -52,6 +62,14 @@ export class KeyboardInput {
         this.fireFrontQueued = true
       }
 
+      if (event.code === 'KeyQ' && !this.pressedKeys.has(event.code)) {
+        this.fireLeftBroadsideQueued = true
+      }
+
+      if (event.code === 'KeyE' && !this.pressedKeys.has(event.code)) {
+        this.fireRightBroadsideQueued = true
+      }
+
       this.pressedKeys.add(event.code)
     }
   }
@@ -66,5 +84,7 @@ export class KeyboardInput {
   private readonly clear = () => {
     this.pressedKeys.clear()
     this.fireFrontQueued = false
+    this.fireLeftBroadsideQueued = false
+    this.fireRightBroadsideQueued = false
   }
 }
