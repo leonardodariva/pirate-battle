@@ -2,6 +2,8 @@ import { expect, test, type Page } from '@playwright/test'
 import type { GameTestSnapshot } from '../../src/game/testing/GameTestBridge'
 import { GAME_OPTIONS_STORAGE_KEY } from '../../src/storage/gameOptionsStorage'
 import { CONFIRMED_MATCHES_STORAGE_KEY } from '../../src/mocks/mockMatchStore'
+import { NETWORK_SCENARIO_STORAGE_KEY } from '../../src/mocks/networkScenario'
+import { PENDING_MATCHES_STORAGE_KEY } from '../../src/storage/pendingMatchStorage'
 
 async function startGame(page: Page) {
   await page.goto('/')
@@ -170,6 +172,52 @@ test('returns an existing record when the same matchId is submitted twice', asyn
   expect(result.secondBody.created).toBe(false)
   expect(result.secondBody.match.score).toBe(17)
   expect(result.storedMatches).toHaveLength(1)
+})
+
+test('persists a failed registration across refresh and retries it', async ({
+  page,
+}) => {
+  await startGame(page)
+  await page.evaluate(
+    ({ scenarioKey }) =>
+      window.localStorage.setItem(scenarioKey, 'post-network-error'),
+    { scenarioKey: NETWORK_SCENARIO_STORAGE_KEY },
+  )
+  await page.evaluate(() => window.__GAME_TEST__?.setRemainingTime(0.05))
+
+  await expect(
+    page.getByRole('heading', { name: 'Time is up!' }),
+  ).toBeVisible()
+  await expect(
+    page.locator('.result-stats dd').filter({ hasText: 'Pending retry' }),
+  ).toBeVisible()
+  const pendingBeforeRefresh = await page.evaluate(
+    ({ pendingKey }) =>
+      JSON.parse(window.localStorage.getItem(pendingKey) ?? '[]'),
+    { pendingKey: PENDING_MATCHES_STORAGE_KEY },
+  )
+  expect(pendingBeforeRefresh).toHaveLength(1)
+
+  await page.getByRole('button', { name: 'Main menu' }).click()
+  await page.reload()
+  await expect(page.getByText('1 result pending')).toBeVisible()
+
+  await page.evaluate(
+    ({ scenarioKey }) => window.localStorage.setItem(scenarioKey, 'normal'),
+    { scenarioKey: NETWORK_SCENARIO_STORAGE_KEY },
+  )
+  await page.getByRole('button', { name: 'Retry', exact: true }).click()
+  await expect(page.getByText('1 result pending')).toHaveCount(0)
+
+  const pendingAfterRetry = await page.evaluate(
+    ({ pendingKey }) =>
+      JSON.parse(window.localStorage.getItem(pendingKey) ?? '[]'),
+    { pendingKey: PENDING_MATCHES_STORAGE_KEY },
+  )
+  expect(pendingAfterRetry).toEqual([])
+
+  await page.getByRole('button', { name: 'Match history' }).click()
+  await expect(page.getByRole('row').nth(1)).toContainText('Time up')
 })
 
 test('validates, persists, and snapshots gameplay options', async ({ page }) => {

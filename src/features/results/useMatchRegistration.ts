@@ -1,8 +1,13 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '../../api/queryKeys'
 import { submitMatch } from '../../api/matchesApi'
 import type { MatchRecord } from '../../api/types'
+import {
+  loadPendingMatches,
+  removePendingMatch,
+  savePendingMatch,
+} from '../../storage/pendingMatchStorage'
 
 interface UseMatchRegistrationParameters {
   match: MatchRecord | null
@@ -13,15 +18,20 @@ export function useMatchRegistration({
 }: UseMatchRegistrationParameters) {
   const queryClient = useQueryClient()
   const submittedMatchIdRef = useRef<string | null>(null)
+  const [pendingMatches, setPendingMatches] = useState(loadPendingMatches)
   const mutation = useMutation({
     mutationFn: submitMatch,
     onSuccess: async (_response, submittedMatch) => {
+      setPendingMatches(removePendingMatch(submittedMatch.matchId))
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['ranking'] }),
         queryClient.invalidateQueries({
           queryKey: queryKeys.history(submittedMatch.playerId, 1).slice(0, 2),
         }),
       ])
+    },
+    onError: (_error, failedMatch) => {
+      setPendingMatches(savePendingMatch(failedMatch))
     },
   })
 
@@ -34,5 +44,15 @@ export function useMatchRegistration({
     mutation.mutate(match)
   }, [match, mutation])
 
-  return mutation
+  const retryPendingMatch = (matchId: string) => {
+    const pendingMatch = pendingMatches.find(
+      (candidate) => candidate.matchId === matchId,
+    )
+
+    if (pendingMatch) {
+      mutation.mutate(pendingMatch)
+    }
+  }
+
+  return { mutation, pendingMatches, retryPendingMatch }
 }

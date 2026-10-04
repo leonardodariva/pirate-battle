@@ -97,6 +97,41 @@ h1 {
   margin-top: 0.6rem;
 }
 
+.pending-registration {
+  display: flex;
+  width: min(88%, 19rem);
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 0.45rem;
+  color: #f8e6bd;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.pending-registration button,
+.registration-retry-button {
+  border: 1px solid rgba(128, 216, 229, 0.55);
+  border-radius: 0.45rem;
+  padding: 0.3rem 0.6rem;
+  background: rgba(3, 25, 35, 0.8);
+  color: #f5fbfc;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.pending-registration button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.registration-retry-button {
+  display: block;
+  margin: 0.35rem auto 0;
+  font-size: 0.65rem;
+}
+
 .options-card {
   width: min(92vw, 34rem);
   border: 1px solid rgba(246, 211, 101, 0.5);
@@ -771,6 +806,11 @@ kbd {
     padding: 1.4rem 1.6rem;
   }
 
+  .menu-card:has(.pending-registration) {
+    width: min(92vw, 72svh, 24rem);
+    padding: 1.15rem 1.5rem;
+  }
+
   .jungle-logo {
     width: 34%;
     margin-bottom: 0;
@@ -807,6 +847,16 @@ kbd {
   .menu-copy {
     margin-top: 0.35rem;
     font-size: 0.58rem;
+  }
+
+  .pending-registration {
+    gap: 0.35rem;
+    margin-top: 0.2rem;
+    font-size: 0.56rem;
+  }
+
+  .pending-registration button {
+    padding: 0.2rem 0.4rem;
   }
 
   .controls-screen {

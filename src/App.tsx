@@ -51,7 +51,7 @@ function App() {
     setMatchId(crypto.randomUUID())
     setGameUiState(null)
     setCompletedMatch(null)
-    registration.reset()
+    registration.mutation.reset()
     setPauseRequestId(0)
     setMatchKey((currentKey) => currentKey + 1)
     setScreen('game')
@@ -172,7 +172,19 @@ function App() {
                 </div>
                 <div>
                   <dt>Registration</dt>
-                  <dd>{getRegistrationLabel(registration.status)}</dd>
+                  <dd>
+                    {getRegistrationLabel(registration.mutation.status)}
+                    {registration.mutation.isError && completedMatch && (
+                      <button
+                        className="registration-retry-button"
+                        onClick={() =>
+                          registration.retryPendingMatch(completedMatch.matchId)
+                        }
+                      >
+                        Retry
+                      </button>
+                    )}
+                  </dd>
                 </div>
               </dl>
               <div className="result-actions">
@@ -278,6 +290,26 @@ function App() {
             Match history
           </button>
         </div>
+        {registration.pendingMatches.length > 0 && (
+          <aside className="pending-registration" aria-live="polite">
+            <span>
+              {registration.pendingMatches.length}{' '}
+              {registration.pendingMatches.length === 1
+                ? 'result pending'
+                : 'results pending'}
+            </span>
+            <button
+              onClick={() =>
+                registration.retryPendingMatch(
+                  registration.pendingMatches[0]!.matchId,
+                )
+              }
+              disabled={registration.mutation.isPending}
+            >
+              {registration.mutation.isPending ? 'Retrying...' : 'Retry'}
+            </button>
+          </aside>
+        )}
         <p className="menu-copy">Navigate. Explore. Survive.</p>
       </section>
     </main>
@@ -295,7 +327,7 @@ function getRegistrationLabel(
     case 'success':
       return 'Confirmed'
     case 'error':
-      return 'Failed'
+      return 'Pending retry'
     default:
       return 'Preparing...'
   }

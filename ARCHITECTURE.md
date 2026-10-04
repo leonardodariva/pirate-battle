@@ -91,8 +91,15 @@ Ranking and Match History after confirmation.
 The mock store persists confirmed records in local storage. Registration checks
 `matchId` before inserting: the first request returns `201` and a retry returns
 the original record with `200`, leaving only one stored match. This is the
-idempotency foundation required for safe retries. Persisting failed submissions
-and selectable failure/timeout scenarios remain deferred to the next milestone.
+idempotency foundation required for safe retries.
+
+When Axios reports a failed POST, the mutation stores the same immutable record
+in a separate pending queue. That queue is loaded during application startup,
+does not block Play, survives refresh, and exposes Retry on both the result and
+main-menu screens. Confirmation removes only the matching `matchId`, then
+invalidates Ranking and Match History. A minimal persisted `post-network-error`
+mock scenario exists to verify this path; the complete scenario selector and
+the special timeout-after-commit behavior remain deferred.
 
 MSW starts before React mounts and uses the generated worker from `public/`, so
 the same REST boundary is present in development, Playwright, preview, and the

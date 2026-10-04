@@ -6,6 +6,7 @@ import {
   readConfirmedMatches,
   registerMatch,
 } from './mockMatchStore'
+import { readNetworkScenario } from './networkScenario'
 import { getRankingPage, rankingFixtures } from './rankingData'
 
 const PAGE_SIZE_LIMIT = 20
@@ -81,6 +82,10 @@ export const handlers = [
         { message: 'A valid match record is required.' },
         { status: 400 },
       )
+    }
+
+    if (readNetworkScenario() === 'post-network-error') {
+      return HttpResponse.error()
     }
 
     await delay(180)
