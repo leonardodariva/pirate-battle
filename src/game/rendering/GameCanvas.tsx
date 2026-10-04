@@ -13,6 +13,11 @@ import playerShipUrl from '../../../assets/png/default/ships/ship_5.png'
 import chaserShipUrl from '../../../assets/png/default/ships/ship_2.png'
 import shooterShipUrl from '../../../assets/png/default/ships/ship_3.png'
 import cannonBallUrl from '../../../assets/png/default/ship_parts/cannon_ball.png'
+import explosionLargeUrl from '../../../assets/png/default/effects/explosion_1.png'
+import explosionMediumUrl from '../../../assets/png/default/effects/explosion_2.png'
+import explosionSmallUrl from '../../../assets/png/default/effects/explosion_3.png'
+import fireLargeUrl from '../../../assets/png/default/effects/fire_1.png'
+import fireSmallUrl from '../../../assets/png/default/effects/fire_2.png'
 import islandTopLeftUrl from '../../../assets/png/default/tiles/tile_1.png'
 import islandTopUrl from '../../../assets/png/default/tiles/tile_2.png'
 import islandTopRightUrl from '../../../assets/png/default/tiles/tile_3.png'
@@ -76,6 +81,13 @@ interface HealthBarView {
   container: Container
   fill: Sprite
   mask: Graphics
+}
+
+interface VisualEffect {
+  sprite: Sprite
+  textures: Texture[]
+  elapsedSeconds: number
+  durationSeconds: number
 }
 
 export interface GameUiState {
@@ -224,6 +236,11 @@ export function GameCanvas({
           waterTextureUrl,
           playerShipUrl,
           cannonBallUrl,
+          explosionLargeUrl,
+          explosionMediumUrl,
+          explosionSmallUrl,
+          fireLargeUrl,
+          fireSmallUrl,
           ...islandAssetUrls,
           chaserShipUrl,
           shooterShipUrl,
@@ -266,6 +283,15 @@ export function GameCanvas({
         const waterTexture = getTexture(waterTextureUrl)
         const playerTexture = getTexture(playerShipUrl)
         const cannonBallTexture = getTexture(cannonBallUrl)
+        const explosionTextures = [
+          getTexture(explosionLargeUrl),
+          getTexture(explosionMediumUrl),
+          getTexture(explosionSmallUrl),
+        ]
+        const fireTextures = [
+          getTexture(fireLargeUrl),
+          getTexture(fireSmallUrl),
+        ]
         const chaserTexture = getTexture(chaserShipUrl)
         const shooterTexture = getTexture(shooterShipUrl)
         const islandTextures = islandAssetUrls.map(getTexture)
@@ -304,6 +330,8 @@ export function GameCanvas({
         const enemyLayer = new Container()
         const enemySprites = new Map<number, Sprite>()
         const healthBarLayer = new Container()
+        const effectsLayer = new Container()
+        const visualEffects: VisualEffect[] = []
         const enemyHealthBars = new Map<number, HealthBarView>()
         const playerShip = new Sprite(playerTexture)
         const playerHealthBar = createHealthBar(
@@ -319,12 +347,14 @@ export function GameCanvas({
           projectileLayer,
           enemyLayer,
           playerShip,
+          effectsLayer,
           healthBarLayer,
         )
         healthBarLayer.addChild(playerHealthBar.container)
         application.stage.addChild(world)
 
         let gameState = createInitialGameState(config)
+        let lastRenderedPlayerHealth = gameState.player.health
         let uiSyncElapsedSeconds = 0
         const publishUiState = () => {
           onStateChangeRef.current?.({
@@ -482,6 +512,55 @@ export function GameCanvas({
         window.addEventListener('blur', handleWindowBlur)
         document.addEventListener('visibilitychange', handleVisibilityChange)
 
+        const addVisualEffect = (
+          textures: Texture[],
+          x: number,
+          y: number,
+          durationSeconds: number,
+          scale: number,
+          rotation = 0,
+        ) => {
+          const sprite = new Sprite(textures[0])
+          sprite.anchor.set(0.5)
+          sprite.position.set(x, y)
+          sprite.rotation = rotation
+          sprite.scale.set(scale)
+          effectsLayer.addChild(sprite)
+          visualEffects.push({
+            sprite,
+            textures,
+            elapsedSeconds: 0,
+            durationSeconds,
+          })
+        }
+
+        const updateVisualEffects = (deltaSeconds: number) => {
+          for (let index = visualEffects.length - 1; index >= 0; index -= 1) {
+            const effect = visualEffects[index]!
+            effect.elapsedSeconds += deltaSeconds
+            const progress = Math.min(
+              effect.elapsedSeconds / effect.durationSeconds,
+              1,
+            )
+
+            if (progress >= 1) {
+              effectsLayer.removeChild(effect.sprite)
+              effect.sprite.destroy()
+              visualEffects.splice(index, 1)
+              continue
+            }
+
+            effect.sprite.texture =
+              effect.textures[
+                Math.min(
+                  Math.floor(progress * effect.textures.length),
+                  effect.textures.length - 1,
+                )
+              ]!
+            effect.sprite.alpha = 1 - progress * 0.7
+          }
+        }
+
         const renderScene = () => {
           playerShip.position.set(gameState.player.x, gameState.player.y)
           playerShip.rotation =
@@ -501,6 +580,16 @@ export function GameCanvas({
             playerHealthFill,
             PLAYER_HEALTH_BAR,
           )
+          if (gameState.player.health < lastRenderedPlayerHealth) {
+            addVisualEffect(
+              explosionTextures,
+              gameState.player.x,
+              gameState.player.y,
+              0.35,
+              0.85,
+            )
+          }
+          lastRenderedPlayerHealth = gameState.player.health
 
           const activeEnemyIds = new Set(
             gameState.enemies.map((enemy) => enemy.id),
@@ -508,6 +597,13 @@ export function GameCanvas({
 
           for (const [id, sprite] of enemySprites) {
             if (!activeEnemyIds.has(id)) {
+              addVisualEffect(
+                explosionTextures,
+                sprite.x,
+                sprite.y,
+                0.5,
+                1.25,
+              )
               enemyLayer.removeChild(sprite)
               sprite.destroy()
               enemySprites.delete(id)
@@ -569,6 +665,13 @@ export function GameCanvas({
 
           for (const [id, sprite] of projectileSprites) {
             if (!activeProjectileIds.has(id)) {
+              addVisualEffect(
+                explosionTextures.slice(1),
+                sprite.x,
+                sprite.y,
+                0.24,
+                0.5,
+              )
               projectileLayer.removeChild(sprite)
               sprite.destroy()
               projectileSprites.delete(id)
@@ -584,6 +687,14 @@ export function GameCanvas({
               sprite.scale.set(1.4)
               projectileLayer.addChild(sprite)
               projectileSprites.set(projectile.id, sprite)
+              addVisualEffect(
+                fireTextures,
+                projectile.x,
+                projectile.y,
+                0.16,
+                0.85,
+                projectile.direction,
+              )
             }
 
             sprite.position.set(projectile.x, projectile.y)
@@ -594,6 +705,7 @@ export function GameCanvas({
           if (gameState.status === 'running') {
             gameLoop.advance(ticker.deltaMS / 1000)
             renderScene()
+            updateVisualEffects(ticker.deltaMS / 1000)
           }
         }
 

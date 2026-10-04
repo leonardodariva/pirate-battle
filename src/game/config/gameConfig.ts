@@ -155,5 +155,13 @@ export const GAME_CONFIG: GameConfig = {
       height: 192,
       collisionInset: 12,
     },
+    {
+      id: 'southwest-island',
+      x: 190,
+      y: 500,
+      width: 192,
+      height: 192,
+      collisionInset: 12,
+    },
   ],
 }

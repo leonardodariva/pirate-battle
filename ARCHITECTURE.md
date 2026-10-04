@@ -176,12 +176,16 @@ specific collision shapes can be introduced later where needed.
 
 ## Island collision
 
-The first island is assembled from a `3 x 3` group of official 64-pixel tiles.
+Each island is assembled from a `3 x 3` group of official 64-pixel tiles.
 Its logical collision area is an inset rectangle so the irregular transparent
 edge does not feel like an invisible wall. Player collision uses a circle versus
 rectangle test and rejects movement into the island while preserving rotation.
 The configured position leaves enough navigable water between the island and
 all four arena boundaries for the player's collision circle.
+
+Two configured islands provide distinct routes through the arena. They share
+the same rendering and collision representation, so adding an island remains a
+data change rather than a new gameplay branch.
 
 The player uses a conservative radius for arena boundaries. Island contact uses
 three smaller circles along the ship's rotated forward axis, approximating its
@@ -207,6 +211,13 @@ and are removed when their lifetime expires or they leave the logical arena.
 PixiJS keeps a sprite map keyed by projectile id. Rendering creates and removes
 sprites to mirror the simulation, but it does not decide when a shot is allowed
 or how it moves. The projectile uses the official `cannon_ball.png` asset.
+
+Short-lived PixiJS effects mirror simulation transitions without becoming game
+state: a new projectile creates a muzzle flash, a removed projectile creates an
+impact, a removed enemy creates a larger explosion, and lost player health
+creates a damage flash. Effects cycle through the official fire/explosion
+textures, fade, destroy their sprites, and are also released with the world
+container during teardown. They never decide damage, score, or collision.
 
 Left and right broadsides have independent cooldowns. Each creates three
 projectiles from evenly spaced points along the ship, all traveling parallel to

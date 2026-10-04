@@ -1,7 +1,7 @@
 # Pirate Battle
 
 A browser-based 2D top-down naval shooter created for the Jungle Gaming
-Frontend Game Developer challenge. Sail around an island, fire three weapon
+Frontend Game Developer challenge. Sail around islands, fire three weapon
 types, fight Chaser and Shooter enemies, and submit completed matches to a
 fully mocked REST API.
 
@@ -152,7 +152,8 @@ included in `public/` and therefore runs in the published build.
 
 - Only the two most important registration-failure scenarios are user-selectable;
   empty/error/variable-latency query scenarios are not exposed in the UI.
-- Visual effects and sound are intentionally limited in favor of gameplay rules.
+- Combat uses lightweight official muzzle-flash, impact, and explosion assets;
+  audio remains a documented future enhancement.
 - The initial JavaScript bundle produces Vite's 500 kB warning; gzip output is
   around 200 kB and future work could lazy-load PixiJS and secondary screens.
 - Performance evidence is a short smoke profile rather than a full three-minute
