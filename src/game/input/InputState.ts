@@ -10,7 +10,7 @@ export type InputAction =
 
 interface AnalogMovement {
   forwardAmount: number
-  turnAmount: number
+  desiredRotation: number
 }
 
 const FIRE_ACTIONS = new Set<InputAction>([
@@ -48,11 +48,16 @@ export class InputState {
   setAnalogMovement(
     source: string,
     forwardAmount: number,
-    turnAmount: number,
+    desiredRotation: number | undefined,
   ) {
+    if (forwardAmount <= 0 || desiredRotation === undefined) {
+      this.analogMovementBySource.delete(source)
+      return
+    }
+
     this.analogMovementBySource.set(source, {
       forwardAmount: clamp(forwardAmount, 0, 1),
-      turnAmount: clamp(turnAmount, -1, 1),
+      desiredRotation,
     })
   }
 
@@ -64,22 +69,30 @@ export class InputState {
     const digitalForward = this.isActive('forward')
     const digitalTurn =
       Number(this.isActive('turnRight')) - Number(this.isActive('turnLeft'))
-    let analogForward = 0
-    let analogTurn = 0
+    let analogMovement: AnalogMovement | undefined
 
     for (const movement of this.analogMovementBySource.values()) {
-      analogForward = Math.max(analogForward, movement.forwardAmount)
-      analogTurn = clamp(analogTurn + movement.turnAmount, -1, 1)
+      if (
+        !analogMovement ||
+        movement.forwardAmount > analogMovement.forwardAmount
+      ) {
+        analogMovement = movement
+      }
     }
 
-    const forwardAmount = Math.max(Number(digitalForward), analogForward)
-    const turnAmount = digitalTurn === 0 ? analogTurn : digitalTurn
+    const forwardAmount = Math.max(
+      Number(digitalForward),
+      analogMovement?.forwardAmount ?? 0,
+    )
+    const turnAmount = digitalTurn
     const input: PlayerInput = {
       forward: forwardAmount > 0,
       turnLeft: turnAmount < 0,
       turnRight: turnAmount > 0,
       forwardAmount,
       turnAmount,
+      desiredRotation:
+        digitalTurn === 0 ? analogMovement?.desiredRotation : undefined,
       fireFront: this.queuedActions.has('fireFront'),
       fireLeftBroadside: this.queuedActions.has('fireLeftBroadside'),
       fireRightBroadside: this.queuedActions.has('fireRightBroadside'),

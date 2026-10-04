@@ -82,6 +82,42 @@ test('moves and fires at the same time with two touch pointers', async ({
   const finalState = await page.evaluate(() => window.__GAME_TEST__?.getState())
   expect(finalState?.player.y).toBeLessThan(initialY - 20)
   expect(finalState?.frontCannonCooldownRemaining).toBeGreaterThan(0)
+
+  const downwardStartY = finalState?.player.y ?? initialY
+  await joystick.dispatchEvent('pointerdown', {
+    pointerId: 3,
+    pointerType: 'touch',
+    isPrimary: true,
+    clientX: centerX,
+    clientY: centerY,
+  })
+  await joystick.dispatchEvent('pointermove', {
+    pointerId: 3,
+    pointerType: 'touch',
+    isPrimary: true,
+    clientX: centerX,
+    clientY: centerY + joystickBounds.height / 2,
+  })
+
+  await page.waitForFunction(
+    (startingY) => {
+      const player = window.__GAME_TEST__?.getState().player
+      return (
+        player !== undefined &&
+        Math.abs(player.rotation) > 2.5 &&
+        player.y > startingY + 20
+      )
+    },
+    downwardStartY,
+  )
+
+  await joystick.dispatchEvent('pointerup', {
+    pointerId: 3,
+    pointerType: 'touch',
+    isPrimary: true,
+    clientX: centerX,
+    clientY: centerY + joystickBounds.height / 2,
+  })
 })
 
 test('keeps the menu and result actions visible in mobile landscape', async ({

@@ -5,27 +5,33 @@ describe('getJoystickMovement', () => {
   it('does nothing inside the central dead zone', () => {
     expect(getJoystickMovement(0.1, -0.1)).toEqual({
       forwardAmount: 0,
-      turnAmount: 0,
+      desiredRotation: undefined,
     })
   })
 
   it('reaches full speed when pushed to the edge', () => {
     expect(getJoystickMovement(0, -1)).toEqual({
       forwardAmount: 1,
-      turnAmount: 0,
+      desiredRotation: 0,
     })
   })
 
-  it('combines proportional movement and rotation on a diagonal', () => {
+  it('uses the stick angle as the desired ship direction', () => {
     const movement = getJoystickMovement(0.7, -0.7)
 
-    expect(movement.forwardAmount).toBeGreaterThan(0.6)
-    expect(movement.forwardAmount).toBeLessThan(0.7)
-    expect(movement.turnAmount).toBeCloseTo(movement.forwardAmount)
+    expect(movement.forwardAmount).toBeGreaterThan(0.98)
+    expect(movement.desiredRotation).toBeCloseTo(Math.PI / 4)
   })
 
-  it('preserves the direction of left and right rotation', () => {
-    expect(getJoystickMovement(-1, 0).turnAmount).toBe(-1)
-    expect(getJoystickMovement(1, 0).turnAmount).toBe(1)
+  it('supports every direction, including downward movement', () => {
+    expect(getJoystickMovement(-1, 0).desiredRotation).toBeCloseTo(
+      -Math.PI / 2,
+    )
+    expect(getJoystickMovement(1, 0).desiredRotation).toBeCloseTo(
+      Math.PI / 2,
+    )
+    expect(Math.abs(getJoystickMovement(0, 1).desiredRotation ?? 0)).toBeCloseTo(
+      Math.PI,
+    )
   })
 })

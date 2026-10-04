@@ -25,6 +25,7 @@ export interface PlayerInput {
   turnRight: boolean
   forwardAmount?: number
   turnAmount?: number
+  desiredRotation?: number
   fireFront: boolean
   fireLeftBroadside: boolean
   fireRightBroadside: boolean
@@ -109,14 +110,23 @@ export function updateGameState(
     config.match.sessionDurationSeconds - elapsedTimeSeconds,
   )
 
-  const turnDirection = clamp(
-    input.turnAmount ?? Number(input.turnRight) - Number(input.turnLeft),
-    -1,
-    1,
-  )
+  const maximumRotationChange =
+    config.player.rotationSpeed * deltaSeconds
+  const rotationChange =
+    input.desiredRotation === undefined
+      ? clamp(
+          input.turnAmount ??
+            Number(input.turnRight) - Number(input.turnLeft),
+          -1,
+          1,
+        ) * maximumRotationChange
+      : clamp(
+          normalizeAngle(input.desiredRotation - state.player.rotation),
+          -maximumRotationChange,
+          maximumRotationChange,
+        )
   const candidateRotation = normalizeAngle(
-    state.player.rotation +
-      turnDirection * config.player.rotationSpeed * deltaSeconds,
+    state.player.rotation + rotationChange,
   )
   const rotation = playerCollidesWithIsland(
     state.player.x,
@@ -132,8 +142,18 @@ export function updateGameState(
     0,
     1,
   )
+  const headingAlignment =
+    input.desiredRotation === undefined
+      ? 1
+      : Math.max(
+          0,
+          Math.cos(normalizeAngle(input.desiredRotation - rotation)),
+        )
   const distance =
-    config.player.movementSpeed * forwardAmount * deltaSeconds
+    config.player.movementSpeed *
+    forwardAmount *
+    headingAlignment *
+    deltaSeconds
   const nextX = state.player.x + Math.sin(rotation) * distance
   const nextY = state.player.y - Math.cos(rotation) * distance
   const boundaryRadius = config.player.boundaryRadius

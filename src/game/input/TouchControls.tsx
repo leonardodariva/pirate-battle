@@ -18,7 +18,7 @@ interface TouchControlsProps {
   onAnalogMovement: (
     source: string,
     forwardAmount: number,
-    turnAmount: number,
+    desiredRotation: number | undefined,
   ) => void
   onAnalogMovementEnd: (source: string) => void
 }
@@ -69,7 +69,7 @@ export function TouchControls({
     onAnalogMovement(
       sourceFor(event.pointerId),
       movement.forwardAmount,
-      movement.turnAmount,
+      movement.desiredRotation,
     )
   }
 

@@ -51,6 +51,22 @@ describe('updateGameState', () => {
     )
   })
 
+  it('turns toward an analog direction before moving forward', () => {
+    const configWithoutIslands = { ...GAME_CONFIG, islands: [] }
+    const state = createInitialGameState(configWithoutIslands)
+
+    const nextState = updateGameState(
+      state,
+      { ...NO_INPUT, forwardAmount: 1, desiredRotation: Math.PI },
+      0.25,
+      configWithoutIslands,
+    )
+
+    expect(Math.abs(nextState.player.rotation)).toBeCloseTo(Math.PI / 4)
+    expect(nextState.player.x).toBe(state.player.x)
+    expect(nextState.player.y).toBe(state.player.y)
+  })
+
   it('rotates right using radians per second', () => {
     const state = createInitialGameState(GAME_CONFIG)
 

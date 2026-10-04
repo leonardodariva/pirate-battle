@@ -2,17 +2,22 @@ const JOYSTICK_DEAD_ZONE = 0.18
 
 export interface JoystickMovement {
   forwardAmount: number
-  turnAmount: number
+  desiredRotation: number | undefined
 }
 
 export function getJoystickMovement(
   normalizedX: number,
   normalizedY: number,
 ): JoystickMovement {
+  const magnitude = Math.min(1, Math.hypot(normalizedX, normalizedY))
+  const forwardAmount = applyDeadZone(magnitude)
+
   return {
-    forwardAmount: applyDeadZone(-normalizedY),
-    turnAmount:
-      Math.sign(normalizedX) * applyDeadZone(Math.abs(normalizedX)),
+    forwardAmount,
+    desiredRotation:
+      forwardAmount === 0
+        ? undefined
+        : Math.atan2(normalizedX, -normalizedY),
   }
 }
 
