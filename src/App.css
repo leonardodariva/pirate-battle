@@ -174,7 +174,8 @@ button:focus-visible {
   box-shadow: 0 1.25rem 4rem rgba(0, 0, 0, 0.3);
 }
 
-.result-dialog {
+.result-dialog,
+.pause-dialog {
   position: absolute;
   inset: 50% auto auto 50%;
   z-index: 2;
@@ -189,10 +190,35 @@ button:focus-visible {
   text-align: center;
 }
 
-.result-dialog h2 {
+.result-dialog h2,
+.pause-dialog h2 {
   margin: 0 0 1.25rem;
   color: #f8e6bd;
   font-size: clamp(1.5rem, 5vw, 2.25rem);
+}
+
+.game-pause-button {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 1;
+  min-height: 2.5rem;
+  background: rgba(3, 25, 35, 0.82);
+}
+
+.pause-dialog p:not(.eyebrow, .pause-hint) {
+  margin: 0 0 1.5rem;
+  color: #b7ccd1;
+}
+
+.pause-dialog .primary-button {
+  margin: 0 auto;
+}
+
+.pause-hint {
+  margin: 0.75rem 0 0;
+  color: #80d8e5;
+  font-size: 0.8rem;
 }
 
 .result-stats {

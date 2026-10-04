@@ -32,7 +32,12 @@ import enemyHealthGreenUrl from '../../../assets/png/default/ui/hud/enemy_health
 import enemyHealthRedUrl from '../../../assets/png/default/ui/hud/enemy_health_fill_red.png'
 import { GAME_CONFIG } from '../config/gameConfig'
 import { GameLoop } from '../core/GameLoop'
-import { createInitialGameState, updateGameState } from '../core/GameState'
+import {
+  createInitialGameState,
+  pauseGameState,
+  resumeGameState,
+  updateGameState,
+} from '../core/GameState'
 import { KeyboardInput } from '../input/KeyboardInput'
 import { getEnemyMaxHealth } from '../systems/EnemySystem'
 import { installGameTestBridge } from '../testing/GameTestBridge'
@@ -41,6 +46,7 @@ type LoadState =
   | { status: 'loading'; progress: number }
   | { status: 'ready' }
   | { status: 'error' }
+type PauseReason = 'manual' | 'automatic'
 
 const PLAYER_SPRITE_ROTATION_OFFSET = Math.PI
 const PLAYER_HEALTH_BAR = {
@@ -71,7 +77,7 @@ interface HealthBarView {
 }
 
 export interface GameUiState {
-  status: 'running' | 'ended'
+  status: 'running' | 'paused' | 'ended'
   endReason: 'timeout' | 'player_destroyed' | null
   score: number
   health: number
@@ -81,6 +87,16 @@ export interface GameUiState {
 
 interface GameCanvasProps {
   onStateChange?: (state: GameUiState) => void
+}
+
+interface PauseControls {
+  toggle: () => void
+  resume: () => void
+}
+
+const EMPTY_PAUSE_CONTROLS: PauseControls = {
+  toggle: () => {},
+  resume: () => {},
 }
 
 function createHealthBar(
@@ -128,11 +144,13 @@ function updateHealthBar(
 export function GameCanvas({ onStateChange }: GameCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null)
   const onStateChangeRef = useRef(onStateChange)
+  const pauseControlsRef = useRef<PauseControls>(EMPTY_PAUSE_CONTROLS)
   const [loadState, setLoadState] = useState<LoadState>({
     status: 'loading',
     progress: 0,
   })
   const [loadAttempt, setLoadAttempt] = useState(0)
+  const [pauseReason, setPauseReason] = useState<PauseReason | null>(null)
 
   useEffect(() => {
     onStateChangeRef.current = onStateChange
@@ -162,6 +180,7 @@ export function GameCanvas({ onStateChange }: GameCanvasProps) {
     async function initialize(hostElement: HTMLDivElement) {
       try {
         setLoadState({ status: 'loading', progress: 0 })
+        setPauseReason(null)
 
         await application.init({
           antialias: true,
@@ -298,7 +317,10 @@ export function GameCanvas({ onStateChange }: GameCanvasProps) {
             remainingTimeSeconds: gameState.remainingTimeSeconds,
           })
         }
-        const keyboardInput = new KeyboardInput(window)
+        let requestPauseToggle = () => {}
+        const keyboardInput = new KeyboardInput(window, () =>
+          requestPauseToggle(),
+        )
         const removeTestBridge = installGameTestBridge(
           () => gameState,
           (setup) => {
@@ -387,6 +409,50 @@ export function GameCanvas({ onStateChange }: GameCanvasProps) {
             }
           },
         )
+        const pause = (reason: PauseReason) => {
+          const pausedState = pauseGameState(gameState)
+
+          if (pausedState === gameState) {
+            return
+          }
+
+          gameState = pausedState
+          gameLoop.reset()
+          keyboardInput.clear()
+          setPauseReason(reason)
+          publishUiState()
+        }
+        const resume = () => {
+          const resumedState = resumeGameState(gameState)
+
+          if (resumedState === gameState) {
+            return
+          }
+
+          gameState = resumedState
+          gameLoop.reset()
+          keyboardInput.clear()
+          setPauseReason(null)
+          publishUiState()
+        }
+        const togglePause = () => {
+          if (gameState.status === 'paused') {
+            resume()
+          } else {
+            pause('manual')
+          }
+        }
+        const handleWindowBlur = () => pause('automatic')
+        const handleVisibilityChange = () => {
+          if (document.visibilityState === 'hidden') {
+            pause('automatic')
+          }
+        }
+
+        requestPauseToggle = togglePause
+        pauseControlsRef.current = { toggle: togglePause, resume }
+        window.addEventListener('blur', handleWindowBlur)
+        document.addEventListener('visibilitychange', handleVisibilityChange)
 
         const renderScene = () => {
           playerShip.position.set(gameState.player.x, gameState.player.y)
@@ -526,6 +592,12 @@ export function GameCanvas({ onStateChange }: GameCanvasProps) {
           application.ticker.remove(handleTick)
           gameLoop.reset()
           keyboardInput.destroy()
+          window.removeEventListener('blur', handleWindowBlur)
+          document.removeEventListener(
+            'visibilitychange',
+            handleVisibilityChange,
+          )
+          pauseControlsRef.current = EMPTY_PAUSE_CONTROLS
           removeTestBridge()
         }
 
@@ -573,6 +645,38 @@ export function GameCanvas({ onStateChange }: GameCanvasProps) {
             Retry
           </button>
         </div>
+      )}
+
+      {loadState.status === 'ready' && pauseReason === null && (
+        <button
+          className="game-pause-button secondary-button"
+          onClick={() => pauseControlsRef.current.toggle()}
+        >
+          Pause
+        </button>
+      )}
+
+      {pauseReason !== null && (
+        <section
+          className="pause-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="pause-title"
+        >
+          <p className="eyebrow">
+            {pauseReason === 'automatic' ? 'Focus lost' : 'Game paused'}
+          </p>
+          <h2 id="pause-title">The battle is paused</h2>
+          <p>Time, movement, attacks and enemy spawns are frozen.</p>
+          <button
+            className="primary-button"
+            onClick={() => pauseControlsRef.current.resume()}
+            autoFocus
+          >
+            Continue
+          </button>
+          <p className="pause-hint">Press Esc to continue</p>
+        </section>
       )}
     </div>
   )

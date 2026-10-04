@@ -94,6 +94,7 @@ function App() {
           <span><kbd>Space</kbd> Front cannon</span>
           <span><kbd>Q</kbd> Left broadside</span>
           <span><kbd>E</kbd> Right broadside</span>
+          <span><kbd>Esc</kbd> Pause</span>
         </div>
       </main>
     )

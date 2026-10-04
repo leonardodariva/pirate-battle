@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { GAME_CONFIG } from '../config/gameConfig'
 import {
   createInitialGameState,
+  pauseGameState,
+  resumeGameState,
   updateGameState,
   type ProjectileState,
 } from './GameState'
@@ -370,5 +372,33 @@ describe('updateGameState', () => {
     )
 
     expect(frozenState).toBe(state)
+  })
+
+  it('freezes updates while paused and resumes only when requested', () => {
+    const state = createInitialGameState(GAME_CONFIG)
+    const pausedState = pauseGameState(state)
+    const frozenState = updateGameState(
+      pausedState,
+      { ...NO_INPUT, forward: true, fireFront: true },
+      1,
+      GAME_CONFIG,
+    )
+
+    expect(pausedState.status).toBe('paused')
+    expect(frozenState).toBe(pausedState)
+
+    const resumedState = resumeGameState(pausedState)
+    const updatedState = updateGameState(
+      resumedState,
+      { ...NO_INPUT, forward: true },
+      GAME_CONFIG.loop.fixedStepSeconds,
+      GAME_CONFIG,
+    )
+
+    expect(resumedState.status).toBe('running')
+    expect(updatedState.player.y).toBeLessThan(state.player.y)
+    expect(updatedState.remainingTimeSeconds).toBeLessThan(
+      state.remainingTimeSeconds,
+    )
   })
 })

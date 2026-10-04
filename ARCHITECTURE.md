@@ -37,6 +37,21 @@ remains outside React, avoiding 60 React renders per second. `Play again`
 remounts `GameCanvas`, so the normal lifecycle cleanup destroys the old runtime
 before a fresh match is created.
 
+## Pause lifecycle
+
+Pause is represented by `GameState.status === "paused"`, not by a visual-only
+overlay. `updateGameState` accepts updates only while running, and the PixiJS
+ticker stops advancing the fixed-step accumulator while paused. Consequently,
+time, movement, projectiles, cooldowns, enemy AI, damage, score, and spawning
+all freeze together.
+
+`Escape` requests a manual toggle through `KeyboardInput`. Window blur and a
+hidden document request an automatic pause, but focus and visibility recovery
+never resume the game. Resuming requires `Escape` or the React Continue button.
+Both transitions reset the loop accumulator and clear held and queued input,
+preventing a long frame, stuck movement key, or delayed cannon shot after the
+pause. Runtime listeners are removed with the PixiJS scene lifecycle.
+
 ## Coordinate system and resize
 
 The simulation uses a fixed logical arena of `1280 x 720` units. The PixiJS

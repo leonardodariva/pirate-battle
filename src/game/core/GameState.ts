@@ -47,7 +47,7 @@ export interface ProjectileState {
 }
 
 export interface GameState {
-  status: 'running' | 'ended'
+  status: 'running' | 'paused' | 'ended'
   endReason: 'timeout' | 'player_destroyed' | null
   elapsedTimeSeconds: number
   remainingTimeSeconds: number
@@ -94,7 +94,7 @@ export function updateGameState(
   deltaSeconds: number,
   config: GameConfig,
 ): GameState {
-  if (state.status === 'ended') {
+  if (state.status !== 'running') {
     return state
   }
 
@@ -319,6 +319,14 @@ export function updateGameState(
     score,
     spawn: spawnUpdateResult.spawnState,
   }
+}
+
+export function pauseGameState(state: GameState): GameState {
+  return state.status === 'running' ? { ...state, status: 'paused' } : state
+}
+
+export function resumeGameState(state: GameState): GameState {
+  return state.status === 'paused' ? { ...state, status: 'running' } : state
 }
 
 function addBroadsideProjectiles(

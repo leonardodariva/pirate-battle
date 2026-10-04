@@ -1,7 +1,7 @@
 import type { GameState } from '../core/GameState'
 
 export interface GameTestSnapshot {
-  status: 'running' | 'ended'
+  status: 'running' | 'paused' | 'ended'
   endReason: 'timeout' | 'player_destroyed' | null
   elapsedTimeSeconds: number
   remainingTimeSeconds: number

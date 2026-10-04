@@ -101,6 +101,71 @@ test('ends the match when enemy damage destroys the player', async ({ page }) =>
   expect(endedState.player.health).toBe(0)
 })
 
+test('pauses with Escape, freezes simulation, and clears queued input', async ({
+  page,
+}) => {
+  await startGame(page)
+  await page.keyboard.press('Escape')
+
+  await expect(
+    page.getByRole('heading', { name: 'The battle is paused' }),
+  ).toBeVisible()
+  const pausedState = await readGameState(page)
+  expect(pausedState.status).toBe('paused')
+
+  await page.keyboard.down('w')
+  await page.keyboard.press('Space')
+  await page.waitForTimeout(300)
+  await page.keyboard.up('w')
+
+  const stillPausedState = await readGameState(page)
+  expect(stillPausedState.player).toEqual(pausedState.player)
+  expect(stillPausedState.remainingTimeSeconds).toBe(
+    pausedState.remainingTimeSeconds,
+  )
+  expect(stillPausedState.projectiles).toEqual(pausedState.projectiles)
+
+  await page.keyboard.press('Escape')
+  await page.waitForFunction(
+    (pausedTime) => {
+      const state = window.__GAME_TEST__?.getState()
+      return (
+        state?.status === 'running' &&
+        state.remainingTimeSeconds < pausedTime - 0.1
+      )
+    },
+    pausedState.remainingTimeSeconds,
+  )
+
+  const resumedState = await readGameState(page)
+  expect(resumedState.projectiles).toEqual(pausedState.projectiles)
+})
+
+test('pauses on blur and requires an explicit Continue action', async ({
+  page,
+}) => {
+  await startGame(page)
+  await page.evaluate(() => window.dispatchEvent(new Event('blur')))
+
+  await expect(page.getByText('Focus lost')).toBeVisible()
+  const pausedState = await readGameState(page)
+  expect(pausedState.status).toBe('paused')
+
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')))
+  await page.waitForTimeout(300)
+
+  const focusedState = await readGameState(page)
+  expect(focusedState.status).toBe('paused')
+  expect(focusedState.remainingTimeSeconds).toBe(
+    pausedState.remainingTimeSeconds,
+  )
+
+  await page.getByRole('button', { name: 'Continue' }).click()
+  await page.waitForFunction(
+    () => window.__GAME_TEST__?.getState().status === 'running',
+  )
+})
+
 test('moves and rotates through real keyboard input', async ({ page }) => {
   await startGame(page)
   const initialState = await readGameState(page)

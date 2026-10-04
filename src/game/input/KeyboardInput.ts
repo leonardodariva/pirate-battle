@@ -15,12 +15,14 @@ const GAMEPLAY_KEYS = new Set([
 export class KeyboardInput {
   private readonly pressedKeys = new Set<string>()
   private readonly target: Window
+  private readonly onPauseRequested: () => void
   private fireFrontQueued = false
   private fireLeftBroadsideQueued = false
   private fireRightBroadsideQueued = false
 
-  constructor(target: Window) {
+  constructor(target: Window, onPauseRequested: () => void = () => {}) {
     this.target = target
+    this.onPauseRequested = onPauseRequested
     target.addEventListener('keydown', this.handleKeyDown)
     target.addEventListener('keyup', this.handleKeyUp)
     target.addEventListener('blur', this.clear)
@@ -54,7 +56,23 @@ export class KeyboardInput {
     this.clear()
   }
 
+  readonly clear = () => {
+    this.pressedKeys.clear()
+    this.fireFrontQueued = false
+    this.fireLeftBroadsideQueued = false
+    this.fireRightBroadsideQueued = false
+  }
+
   private readonly handleKeyDown = (event: KeyboardEvent) => {
+    if (event.code === 'Escape') {
+      event.preventDefault()
+
+      if (!event.repeat) {
+        this.onPauseRequested()
+      }
+      return
+    }
+
     if (GAMEPLAY_KEYS.has(event.code)) {
       event.preventDefault()
 
@@ -81,10 +99,4 @@ export class KeyboardInput {
     }
   }
 
-  private readonly clear = () => {
-    this.pressedKeys.clear()
-    this.fireFrontQueued = false
-    this.fireLeftBroadsideQueued = false
-    this.fireRightBroadsideQueued = false
-  }
 }
