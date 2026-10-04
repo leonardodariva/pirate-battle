@@ -56,6 +56,42 @@ test('moves and rotates through real keyboard input', async ({ page }) => {
   expect(rotatedState.player.rotation).toBeGreaterThan(0.2)
 })
 
+test('moves the chaser toward the player', async ({ page }) => {
+  await startGame(page)
+  const initialState = await readGameState(page)
+  const initialEnemy = initialState.enemies[0]
+
+  expect(initialEnemy?.type).toBe('chaser')
+  if (!initialEnemy) {
+    throw new Error('The initial chaser was not created.')
+  }
+
+  const initialDistance = Math.hypot(
+    initialState.player.x - initialEnemy.x,
+    initialState.player.y - initialEnemy.y,
+  )
+
+  await page.waitForFunction(
+    ({ enemyId, distance }) => {
+      const state = window.__GAME_TEST__?.getState()
+      const enemy = state?.enemies.find((candidate) => candidate.id === enemyId)
+
+      if (!state || !enemy) {
+        return false
+      }
+
+      return (
+        Math.hypot(state.player.x - enemy.x, state.player.y - enemy.y) <
+        distance - 20
+      )
+    },
+    { enemyId: initialEnemy.id, distance: initialDistance },
+  )
+
+  const chasedState = await readGameState(page)
+  expect(chasedState.enemies[0]?.rotation).not.toBe(0)
+})
+
 test('fires the front cannon through real keyboard input', async ({ page }) => {
   await startGame(page)
   const initialState = await readGameState(page)

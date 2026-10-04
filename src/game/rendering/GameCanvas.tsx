@@ -9,6 +9,7 @@ import {
   TilingSprite,
 } from 'pixi.js'
 import playerShipUrl from '../../../assets/png/default/ships/ship_5.png'
+import chaserShipUrl from '../../../assets/png/default/ships/ship_2.png'
 import cannonBallUrl from '../../../assets/png/default/ship_parts/cannon_ball.png'
 import islandTopLeftUrl from '../../../assets/png/default/tiles/tile_1.png'
 import islandTopUrl from '../../../assets/png/default/tiles/tile_2.png'
@@ -90,6 +91,7 @@ export function GameCanvas() {
           playerShipUrl,
           cannonBallUrl,
           ...islandAssetUrls,
+          chaserShipUrl,
         ]
         const loadedTextures: Texture[] = []
         for (const assetUrl of assetUrls) {
@@ -111,11 +113,13 @@ export function GameCanvas() {
         }
 
         const [waterTexture, playerTexture, cannonBallTexture] = loadedTextures
-        const islandTextures = loadedTextures.slice(3)
+        const islandTextures = loadedTextures.slice(3, 12)
+        const chaserTexture = loadedTextures[12]
         if (
           !waterTexture ||
           !playerTexture ||
           !cannonBallTexture ||
+          !chaserTexture ||
           islandTextures.length !== 9
         ) {
           throw new Error('The required game textures were not loaded.')
@@ -145,10 +149,18 @@ export function GameCanvas() {
         }
         const projectileLayer = new Container()
         const projectileSprites = new Map<number, Sprite>()
+        const enemyLayer = new Container()
+        const enemySprites = new Map<number, Sprite>()
         const playerShip = new Sprite(playerTexture)
         playerShip.anchor.set(0.5)
         playerShip.scale.set(0.9)
-        world.addChild(water, islandLayer, projectileLayer, playerShip)
+        world.addChild(
+          water,
+          islandLayer,
+          projectileLayer,
+          enemyLayer,
+          playerShip,
+        )
         application.stage.addChild(world)
 
         let gameState = createInitialGameState(GAME_CONFIG)
@@ -171,6 +183,34 @@ export function GameCanvas() {
           playerShip.position.set(gameState.player.x, gameState.player.y)
           playerShip.rotation =
             gameState.player.rotation + PLAYER_SPRITE_ROTATION_OFFSET
+
+          const activeEnemyIds = new Set(
+            gameState.enemies.map((enemy) => enemy.id),
+          )
+
+          for (const [id, sprite] of enemySprites) {
+            if (!activeEnemyIds.has(id)) {
+              enemyLayer.removeChild(sprite)
+              sprite.destroy()
+              enemySprites.delete(id)
+            }
+          }
+
+          for (const enemy of gameState.enemies) {
+            let sprite = enemySprites.get(enemy.id)
+
+            if (!sprite) {
+              sprite = new Sprite(chaserTexture)
+              sprite.anchor.set(0.5)
+              sprite.scale.set(0.85)
+              enemyLayer.addChild(sprite)
+              enemySprites.set(enemy.id, sprite)
+            }
+
+            sprite.position.set(enemy.x, enemy.y)
+            sprite.rotation =
+              enemy.rotation + PLAYER_SPRITE_ROTATION_OFFSET
+          }
 
           const activeProjectileIds = new Set(
             gameState.projectiles.map((projectile) => projectile.id),

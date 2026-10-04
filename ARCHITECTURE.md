@@ -85,6 +85,18 @@ projectiles from evenly spaced points along the ship, all traveling parallel to
 the selected side. The spacing and weapon balance remain centralized in game
 configuration.
 
+## Chaser enemy
+
+The first deterministic enemy is a Chaser rendered with the official
+`ship_2.png` asset. `EnemySystem` owns its pure simulation rule: calculate the
+desired heading with `atan2`, normalize the shortest angular difference, limit
+turning by configured radians per second, and then move forward using the fixed
+timestep. PixiJS mirrors enemies by stable id and does not implement AI rules.
+
+This increment intentionally stops before enemy/player collision, damage,
+scoring, island avoidance, and periodic spawning. Those rules will build on the
+same enemy state in following milestones.
+
 ## Asset strategy
 
 The official challenge assets remain in the repository-level `assets/` folder.

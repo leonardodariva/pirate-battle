@@ -3,6 +3,11 @@ import {
   circleIntersectsRectangle,
   insetRectangle,
 } from '../utils/collision'
+import {
+  createInitialEnemies,
+  updateEnemies,
+  type EnemyState,
+} from '../systems/EnemySystem'
 
 export interface PlayerInput {
   forward: boolean
@@ -32,6 +37,7 @@ export interface ProjectileState {
 
 export interface GameState {
   player: PlayerState
+  enemies: EnemyState[]
   projectiles: ProjectileState[]
   frontCannonCooldownRemaining: number
   leftBroadsideCooldownRemaining: number
@@ -46,6 +52,7 @@ export function createInitialGameState(config: GameConfig): GameState {
       y: config.arena.height / 2,
       rotation: 0,
     },
+    enemies: createInitialEnemies(config),
     projectiles: [],
     frontCannonCooldownRemaining: 0,
     leftBroadsideCooldownRemaining: 0,
@@ -107,6 +114,7 @@ export function updateGameState(
     ? state.player.y
     : candidateY
   const player = { x: playerX, y: playerY, rotation }
+  const enemies = updateEnemies(state.enemies, player, deltaSeconds, config)
   let frontCannonCooldownRemaining = Math.max(
     0,
     state.frontCannonCooldownRemaining - deltaSeconds,
@@ -191,6 +199,7 @@ export function updateGameState(
 
   return {
     player,
+    enemies,
     projectiles,
     frontCannonCooldownRemaining,
     leftBroadsideCooldownRemaining,

@@ -32,6 +32,17 @@ export interface GameConfig {
   projectiles: {
     collisionRadius: number
   }
+  chaser: {
+    maxHealth: number
+    movementSpeed: number
+    rotationSpeed: number
+    collisionRadius: number
+    firstSpawn: {
+      x: number
+      y: number
+      rotation: number
+    }
+  }
   islands: ReadonlyArray<{
     id: string
     x: number
@@ -75,6 +86,17 @@ export const GAME_CONFIG: GameConfig = {
   },
   projectiles: {
     collisionRadius: 5,
+  },
+  chaser: {
+    maxHealth: 3,
+    movementSpeed: 90,
+    rotationSpeed: 2.2,
+    collisionRadius: 25,
+    firstSpawn: {
+      x: 180,
+      y: 180,
+      rotation: 0,
+    },
   },
   islands: [
     {

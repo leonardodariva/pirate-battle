@@ -6,6 +6,14 @@ export interface GameTestSnapshot {
     y: number
     rotation: number
   }
+  enemies: Array<{
+    id: number
+    type: 'chaser'
+    x: number
+    y: number
+    rotation: number
+    health: number
+  }>
   projectiles: Array<{
     id: number
     x: number
@@ -39,6 +47,7 @@ export function installGameTestBridge(readState: () => GameState) {
 
       return {
         player: { ...state.player },
+        enemies: state.enemies.map((enemy) => ({ ...enemy })),
         projectiles: state.projectiles.map((projectile) => ({
           id: projectile.id,
           x: projectile.x,
