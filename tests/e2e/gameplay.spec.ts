@@ -97,17 +97,47 @@ test('fires three projectiles from each broadside', async ({ page }) => {
   }
 })
 
+test('blocks the player and projectiles at the island', async ({ page }) => {
+  await startGame(page)
+
+  await page.keyboard.press('e')
+  await page.waitForFunction(() => {
+    const state = window.__GAME_TEST__?.getState()
+    return (
+      state !== undefined &&
+      state.rightBroadsideCooldownRemaining > 0 &&
+      state.projectiles.length === 1
+    )
+  })
+
+  await page.keyboard.down('d')
+  await page.waitForFunction(
+    () => (window.__GAME_TEST__?.getState().player.rotation ?? 0) >= 1.4,
+  )
+  await page.keyboard.up('d')
+  await page.keyboard.down('w')
+  await page.waitForTimeout(1_000)
+  await page.keyboard.up('w')
+
+  const blockedState = await readGameState(page)
+  expect(blockedState.player.x).toBeGreaterThanOrEqual(756)
+  expect(blockedState.player.x).toBeLessThan(764)
+})
+
 test('keeps the player inside the arena and preserves state on resize', async ({
   page,
 }) => {
   await startGame(page)
 
+  await page.keyboard.down('a')
+  await page.waitForTimeout(500)
+  await page.keyboard.up('a')
   await page.keyboard.down('w')
-  await page.waitForTimeout(2_000)
+  await page.waitForTimeout(3_000)
   await page.keyboard.up('w')
 
   const boundaryState = await readGameState(page)
-  expect(boundaryState.player.y).toBeCloseTo(52, 1)
+  expect(boundaryState.player.x).toBeCloseTo(52, 1)
 
   await page.setViewportSize({ width: 900, height: 600 })
   await page.waitForTimeout(100)

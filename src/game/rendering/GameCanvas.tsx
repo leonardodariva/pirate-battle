@@ -10,6 +10,15 @@ import {
 } from 'pixi.js'
 import playerShipUrl from '../../../assets/png/default/ships/ship_5.png'
 import cannonBallUrl from '../../../assets/png/default/ship_parts/cannon_ball.png'
+import islandTopLeftUrl from '../../../assets/png/default/tiles/tile_1.png'
+import islandTopUrl from '../../../assets/png/default/tiles/tile_2.png'
+import islandTopRightUrl from '../../../assets/png/default/tiles/tile_3.png'
+import islandLeftUrl from '../../../assets/png/default/tiles/tile_17.png'
+import islandCenterUrl from '../../../assets/png/default/tiles/tile_18.png'
+import islandRightUrl from '../../../assets/png/default/tiles/tile_19.png'
+import islandBottomLeftUrl from '../../../assets/png/default/tiles/tile_33.png'
+import islandBottomUrl from '../../../assets/png/default/tiles/tile_34.png'
+import islandBottomRightUrl from '../../../assets/png/default/tiles/tile_35.png'
 import waterTextureUrl from '../../../assets/png/default/tiles/tile_73.png'
 import { GAME_CONFIG } from '../config/gameConfig'
 import { GameLoop } from '../core/GameLoop'
@@ -65,7 +74,23 @@ export function GameCanvas() {
         })
         applicationInitialized = true
 
-        const assetUrls = [waterTextureUrl, playerShipUrl, cannonBallUrl]
+        const islandAssetUrls = [
+          islandTopLeftUrl,
+          islandTopUrl,
+          islandTopRightUrl,
+          islandLeftUrl,
+          islandCenterUrl,
+          islandRightUrl,
+          islandBottomLeftUrl,
+          islandBottomUrl,
+          islandBottomRightUrl,
+        ]
+        const assetUrls = [
+          waterTextureUrl,
+          playerShipUrl,
+          cannonBallUrl,
+          ...islandAssetUrls,
+        ]
         const loadedTextures: Texture[] = []
         for (const assetUrl of assetUrls) {
           loadedTextures.push(await Assets.load<Texture>(assetUrl))
@@ -86,7 +111,13 @@ export function GameCanvas() {
         }
 
         const [waterTexture, playerTexture, cannonBallTexture] = loadedTextures
-        if (!waterTexture || !playerTexture || !cannonBallTexture) {
+        const islandTextures = loadedTextures.slice(3)
+        if (
+          !waterTexture ||
+          !playerTexture ||
+          !cannonBallTexture ||
+          islandTextures.length !== 9
+        ) {
           throw new Error('The required game textures were not loaded.')
         }
 
@@ -99,12 +130,25 @@ export function GameCanvas() {
           width: GAME_CONFIG.arena.width,
           height: GAME_CONFIG.arena.height,
         })
+        const islandLayer = new Container()
+        for (const island of GAME_CONFIG.islands) {
+          const islandContainer = new Container()
+          islandContainer.position.set(island.x, island.y)
+
+          islandTextures.forEach((texture, index) => {
+            const tile = new Sprite(texture)
+            tile.position.set((index % 3) * 64, Math.floor(index / 3) * 64)
+            islandContainer.addChild(tile)
+          })
+
+          islandLayer.addChild(islandContainer)
+        }
         const projectileLayer = new Container()
         const projectileSprites = new Map<number, Sprite>()
         const playerShip = new Sprite(playerTexture)
         playerShip.anchor.set(0.5)
         playerShip.scale.set(0.9)
-        world.addChild(water, projectileLayer, playerShip)
+        world.addChild(water, islandLayer, projectileLayer, playerShip)
         application.stage.addChild(world)
 
         let gameState = createInitialGameState(GAME_CONFIG)

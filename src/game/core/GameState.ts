@@ -1,4 +1,8 @@
 import type { GameConfig } from '../config/gameConfig'
+import {
+  circleIntersectsRectangle,
+  insetRectangle,
+} from '../utils/collision'
 
 export interface PlayerInput {
   forward: boolean
@@ -57,23 +61,52 @@ export function updateGameState(
   config: GameConfig,
 ): GameState {
   const turnDirection = Number(input.turnRight) - Number(input.turnLeft)
-  const rotation = normalizeAngle(
+  const candidateRotation = normalizeAngle(
     state.player.rotation +
       turnDirection * config.player.rotationSpeed * deltaSeconds,
   )
+  const rotation = playerCollidesWithIsland(
+    state.player.x,
+    state.player.y,
+    candidateRotation,
+    config,
+  )
+    ? state.player.rotation
+    : candidateRotation
 
   const distance = input.forward
     ? config.player.movementSpeed * deltaSeconds
     : 0
   const nextX = state.player.x + Math.sin(rotation) * distance
   const nextY = state.player.y - Math.cos(rotation) * distance
-  const radius = config.player.boundaryRadius
-
-  const player = {
-    x: clamp(nextX, radius, config.arena.width - radius),
-    y: clamp(nextY, radius, config.arena.height - radius),
+  const boundaryRadius = config.player.boundaryRadius
+  const candidateX = clamp(
+    nextX,
+    boundaryRadius,
+    config.arena.width - boundaryRadius,
+  )
+  const candidateY = clamp(
+    nextY,
+    boundaryRadius,
+    config.arena.height - boundaryRadius,
+  )
+  const playerX = playerCollidesWithIsland(
+    candidateX,
+    state.player.y,
     rotation,
-  }
+    config,
+  )
+    ? state.player.x
+    : candidateX
+  const playerY = playerCollidesWithIsland(
+    playerX,
+    candidateY,
+    rotation,
+    config,
+  )
+    ? state.player.y
+    : candidateY
+  const player = { x: playerX, y: playerY, rotation }
   let frontCannonCooldownRemaining = Math.max(
     0,
     state.frontCannonCooldownRemaining - deltaSeconds,
@@ -104,7 +137,15 @@ export function updateGameState(
         projectile.x >= 0 &&
         projectile.x <= config.arena.width &&
         projectile.y >= 0 &&
-        projectile.y <= config.arena.height,
+        projectile.y <= config.arena.height &&
+        !config.islands.some((island) =>
+          circleIntersectsRectangle(
+            projectile.x,
+            projectile.y,
+            config.projectiles.collisionRadius,
+            insetRectangle(island, island.collisionInset),
+          ),
+        ),
     )
 
   if (input.fireFront && frontCannonCooldownRemaining === 0) {
@@ -198,6 +239,41 @@ function addBroadsideProjectiles(
   })
 
   return firstProjectileId + cannonOffsets.length
+}
+
+function collidesWithIsland(
+  x: number,
+  y: number,
+  radius: number,
+  config: GameConfig,
+) {
+  return config.islands.some((island) =>
+    circleIntersectsRectangle(
+      x,
+      y,
+      radius,
+      insetRectangle(island, island.collisionInset),
+    ),
+  )
+}
+
+function playerCollidesWithIsland(
+  x: number,
+  y: number,
+  rotation: number,
+  config: GameConfig,
+) {
+  const forwardX = Math.sin(rotation)
+  const forwardY = -Math.cos(rotation)
+
+  return config.player.collisionOffsets.some((offset) =>
+    collidesWithIsland(
+      x + forwardX * offset,
+      y + forwardY * offset,
+      config.player.collisionRadius,
+      config,
+    ),
+  )
 }
 
 function clamp(value: number, minimum: number, maximum: number) {

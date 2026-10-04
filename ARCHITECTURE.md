@@ -44,7 +44,30 @@ window blur and all listeners are removed when gameplay unmounts.
 
 The player is clamped to the arena using a configured circular boundary radius.
 This is intentionally conservative and predictable. Island collision and more
-specific collision shapes belong to a later milestone.
+specific collision shapes can be introduced later where needed.
+
+## Island collision
+
+The first island is assembled from a `3 x 3` group of official 64-pixel tiles.
+Its logical collision area is an inset rectangle so the irregular transparent
+edge does not feel like an invisible wall. Player collision uses a circle versus
+rectangle test and rejects movement into the island while preserving rotation.
+The configured position leaves enough navigable water between the island and
+all four arena boundaries for the player's collision circle.
+
+The player uses a conservative radius for arena boundaries. Island contact uses
+three smaller circles along the ship's rotated forward axis, approximating its
+long, narrow hull as a capsule without requiring polygon collision. Rotation is
+accepted only when the rotated collision circles remain outside the island.
+
+Movement resolves the horizontal and vertical axes separately, so a blocked
+component stops while the other can continue and slide the ship along the
+obstacle. This avoids diagonal contact locking all movement.
+
+Projectiles use the same helper with a smaller configured radius and are removed
+when they touch the island. At the current fixed step and projectile speeds this
+discrete test is sufficient; swept collision would be needed for much faster or
+smaller projectiles.
 
 ## Front cannon and projectiles
 

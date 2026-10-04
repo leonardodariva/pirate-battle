@@ -17,18 +17,19 @@ const NO_INPUT = {
 
 describe('updateGameState', () => {
   it('moves the player forward using units per second', () => {
-    const state = createInitialGameState(GAME_CONFIG)
+    const configWithoutIslands = { ...GAME_CONFIG, islands: [] }
+    const state = createInitialGameState(configWithoutIslands)
 
     const nextState = updateGameState(
       state,
       { ...NO_INPUT, forward: true },
       0.5,
-      GAME_CONFIG,
+      configWithoutIslands,
     )
 
     expect(nextState.player.x).toBe(state.player.x)
     expect(nextState.player.y).toBe(
-      state.player.y - GAME_CONFIG.player.movementSpeed * 0.5,
+      state.player.y - configWithoutIslands.player.movementSpeed * 0.5,
     )
   })
 
@@ -80,6 +81,40 @@ describe('updateGameState', () => {
     )
 
     expect(nextState.player.y).toBe(radius)
+  })
+
+  it('blocks the colliding axis while allowing sliding and rotation', () => {
+    const state = createInitialGameState(GAME_CONFIG)
+    state.player.x = 759
+    state.player.y = 300
+    state.player.rotation = Math.PI / 2
+
+    const nextState = updateGameState(
+      state,
+      { ...NO_INPUT, forward: true, turnRight: true },
+      GAME_CONFIG.loop.fixedStepSeconds,
+      GAME_CONFIG,
+    )
+
+    expect(nextState.player.x).toBe(state.player.x)
+    expect(nextState.player.y).toBeGreaterThan(state.player.y)
+    expect(nextState.player.rotation).toBeGreaterThan(state.player.rotation)
+  })
+
+  it('does not rotate the ship hull into an island', () => {
+    const state = createInitialGameState(GAME_CONFIG)
+    state.player.x = 780
+    state.player.y = 390
+    state.player.rotation = Math.PI / 2
+
+    const nextState = updateGameState(
+      state,
+      { ...NO_INPUT, turnLeft: true },
+      0.25,
+      GAME_CONFIG,
+    )
+
+    expect(nextState.player.rotation).toBe(state.player.rotation)
   })
 
   it('cancels rotation when left and right are pressed together', () => {
@@ -190,6 +225,28 @@ describe('updateGameState', () => {
     )
 
     expect(nextState.projectiles).toHaveLength(0)
+  })
+
+  it('removes a projectile when it hits an island', () => {
+    const initialState = createInitialGameState(GAME_CONFIG)
+    initialState.player.rotation = Math.PI / 2
+    let state = updateGameState(
+      initialState,
+      { ...NO_INPUT, fireFront: true },
+      GAME_CONFIG.loop.fixedStepSeconds,
+      GAME_CONFIG,
+    )
+
+    for (let update = 0; update < 20; update += 1) {
+      state = updateGameState(
+        state,
+        NO_INPUT,
+        GAME_CONFIG.loop.fixedStepSeconds,
+        GAME_CONFIG,
+      )
+    }
+
+    expect(state.projectiles).toHaveLength(0)
   })
 
   it('fires three parallel projectiles from the left broadside', () => {

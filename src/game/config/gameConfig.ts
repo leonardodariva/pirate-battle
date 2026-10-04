@@ -11,6 +11,8 @@ export interface GameConfig {
     movementSpeed: number
     rotationSpeed: number
     boundaryRadius: number
+    collisionRadius: number
+    collisionOffsets: readonly number[]
   }
   frontCannon: {
     cooldownSeconds: number
@@ -27,6 +29,17 @@ export interface GameConfig {
     spawnOffset: number
     cannonSpacing: number
   }
+  projectiles: {
+    collisionRadius: number
+  }
+  islands: ReadonlyArray<{
+    id: string
+    x: number
+    y: number
+    width: number
+    height: number
+    collisionInset: number
+  }>
 }
 
 export const GAME_CONFIG: GameConfig = {
@@ -42,6 +55,8 @@ export const GAME_CONFIG: GameConfig = {
     movementSpeed: 220,
     rotationSpeed: Math.PI,
     boundaryRadius: 52,
+    collisionRadius: 25,
+    collisionOffsets: [-27, 0, 27],
   },
   frontCannon: {
     cooldownSeconds: 0.6,
@@ -58,4 +73,17 @@ export const GAME_CONFIG: GameConfig = {
     spawnOffset: 38,
     cannonSpacing: 24,
   },
+  projectiles: {
+    collisionRadius: 5,
+  },
+  islands: [
+    {
+      id: 'north-island',
+      x: 800,
+      y: 180,
+      width: 192,
+      height: 192,
+      collisionInset: 12,
+    },
+  ],
 }
