@@ -10,10 +10,12 @@ import './App.css'
 function App() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [matchKey, setMatchKey] = useState(0)
+  const [pauseRequestId, setPauseRequestId] = useState(0)
   const [gameUiState, setGameUiState] = useState<GameUiState | null>(null)
 
   const startMatch = () => {
     setGameUiState(null)
+    setPauseRequestId(0)
     setMatchKey((currentKey) => currentKey + 1)
     setIsPlaying(true)
   }
@@ -42,16 +44,32 @@ function App() {
             <span>Score <strong>{gameUiState?.score ?? 0}</strong></span>
             <span>Time <strong>{remainingSeconds}s</strong></span>
           </div>
-          <button className="secondary-button" onClick={leaveMatch}>
-            Leave match
-          </button>
+          <div className="game-header-actions">
+            {gameUiState?.status === 'running' && (
+              <button
+                className="secondary-button"
+                onClick={() =>
+                  setPauseRequestId((requestId) => requestId + 1)
+                }
+              >
+                Pause
+              </button>
+            )}
+            <button className="secondary-button" onClick={leaveMatch}>
+              Leave match
+            </button>
+          </div>
         </header>
 
         <section className="arena-panel" aria-labelledby="arena-title">
           <h2 id="arena-title" className="visually-hidden">
             Naval combat arena
           </h2>
-          <GameCanvas key={matchKey} onStateChange={setGameUiState} />
+          <GameCanvas
+            key={matchKey}
+            pauseRequestId={pauseRequestId}
+            onStateChange={setGameUiState}
+          />
 
           {gameUiState?.status === 'ended' && (
             <section

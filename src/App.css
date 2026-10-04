@@ -92,6 +92,10 @@ button:focus-visible {
   outline-offset: 3px;
 }
 
+.primary-button:focus-visible {
+  border-radius: 1.5rem;
+}
+
 .primary-button {
   width: min(100%, 17.5rem);
   aspect-ratio: 256 / 88;
@@ -154,6 +158,12 @@ button:focus-visible {
   font-size: clamp(2rem, 5vw, 3.5rem);
 }
 
+.game-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .secondary-button {
   border: 1px solid rgba(183, 204, 209, 0.5);
   background: transparent;
@@ -195,15 +205,6 @@ button:focus-visible {
   margin: 0 0 1.25rem;
   color: #f8e6bd;
   font-size: clamp(1.5rem, 5vw, 2.25rem);
-}
-
-.game-pause-button {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  z-index: 1;
-  min-height: 2.5rem;
-  background: rgba(3, 25, 35, 0.82);
 }
 
 .pause-dialog p:not(.eyebrow, .pause-hint) {

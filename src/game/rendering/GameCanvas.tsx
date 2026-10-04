@@ -87,15 +87,18 @@ export interface GameUiState {
 
 interface GameCanvasProps {
   onStateChange?: (state: GameUiState) => void
+  pauseRequestId?: number
 }
 
 interface PauseControls {
   toggle: () => void
+  pause: () => void
   resume: () => void
 }
 
 const EMPTY_PAUSE_CONTROLS: PauseControls = {
   toggle: () => {},
+  pause: () => {},
   resume: () => {},
 }
 
@@ -141,7 +144,10 @@ function updateHealthBar(
   view.container.position.set(x, y - metrics.offsetY)
 }
 
-export function GameCanvas({ onStateChange }: GameCanvasProps) {
+export function GameCanvas({
+  onStateChange,
+  pauseRequestId = 0,
+}: GameCanvasProps) {
   const hostRef = useRef<HTMLDivElement>(null)
   const onStateChangeRef = useRef(onStateChange)
   const pauseControlsRef = useRef<PauseControls>(EMPTY_PAUSE_CONTROLS)
@@ -155,6 +161,12 @@ export function GameCanvas({ onStateChange }: GameCanvasProps) {
   useEffect(() => {
     onStateChangeRef.current = onStateChange
   }, [onStateChange])
+
+  useEffect(() => {
+    if (pauseRequestId > 0) {
+      pauseControlsRef.current.pause()
+    }
+  }, [pauseRequestId])
 
   useEffect(() => {
     const host = hostRef.current
@@ -450,7 +462,11 @@ export function GameCanvas({ onStateChange }: GameCanvasProps) {
         }
 
         requestPauseToggle = togglePause
-        pauseControlsRef.current = { toggle: togglePause, resume }
+        pauseControlsRef.current = {
+          toggle: togglePause,
+          pause: () => pause('manual'),
+          resume,
+        }
         window.addEventListener('blur', handleWindowBlur)
         document.addEventListener('visibilitychange', handleVisibilityChange)
 
@@ -645,15 +661,6 @@ export function GameCanvas({ onStateChange }: GameCanvasProps) {
             Retry
           </button>
         </div>
-      )}
-
-      {loadState.status === 'ready' && pauseReason === null && (
-        <button
-          className="game-pause-button secondary-button"
-          onClick={() => pauseControlsRef.current.toggle()}
-        >
-          Pause
-        </button>
       )}
 
       {pauseReason !== null && (
