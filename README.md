@@ -5,6 +5,9 @@ Frontend Game Developer challenge. Sail around islands, fire three weapon
 types, fight Chaser and Shooter enemies, and submit completed matches to a
 fully mocked REST API.
 
+**[Play Pirate Battle](https://pirate-battle-pi.vercel.app/)** ·
+[Source code](https://github.com/leonardodariva/pirate-battle)
+
 The original challenge specification is available in the
 [Jungle Gaming repository](https://github.com/junglegaming/game-developer-challenge).
 
@@ -151,9 +154,13 @@ Publish directory:
 dist
 ```
 
-The project is suitable for Vercel, Netlify, or Cloudflare Pages. Configure SPA
-fallbacks to serve `index.html` on direct navigation. `mockServiceWorker.js` is
-included in `public/` and therefore runs in the published build.
+The production build is deployed on Vercel at
+[pirate-battle-pi.vercel.app](https://pirate-battle-pi.vercel.app/). Every push
+to `main` automatically creates a new production deployment.
+
+For another static host, configure SPA fallbacks to serve `index.html` on
+direct navigation. `mockServiceWorker.js` is included in `public/` and
+therefore runs in the published build.
 
 ## Known limitations
 
@@ -173,5 +180,5 @@ included in `public/` and therefore runs in the published build.
 
 The gameplay loop, responsive desktop/mobile controls, match lifecycle,
 Ranking, History, idempotent registration, pending recovery, unit tests, and E2E
-tests are implemented. Public deployment details should be added here after the
-repository and hosting project are created.
+tests are implemented. The source repository and public Vercel deployment are
+linked above.
