@@ -3,6 +3,7 @@ import {
   Application,
   Assets,
   Container,
+  Graphics,
   Sprite,
   Texture,
   Ticker,
@@ -33,6 +34,31 @@ type LoadState =
   | { status: 'error' }
 
 const PLAYER_SPRITE_ROTATION_OFFSET = Math.PI
+const HEALTH_BAR_WIDTH = 52
+const HEALTH_BAR_HEIGHT = 6
+
+function drawHealthBar(
+  graphics: Graphics,
+  x: number,
+  y: number,
+  currentHealth: number,
+  maximumHealth: number,
+) {
+  const healthRatio = Math.max(0, Math.min(1, currentHealth / maximumHealth))
+
+  graphics
+    .clear()
+    .rect(-HEALTH_BAR_WIDTH / 2, 0, HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT)
+    .fill(0x4a1118)
+    .rect(
+      -HEALTH_BAR_WIDTH / 2,
+      0,
+      HEALTH_BAR_WIDTH * healthRatio,
+      HEALTH_BAR_HEIGHT,
+    )
+    .fill(0x55d66b)
+  graphics.position.set(x, y - 68)
+}
 
 export function GameCanvas() {
   const hostRef = useRef<HTMLDivElement>(null)
@@ -151,7 +177,10 @@ export function GameCanvas() {
         const projectileSprites = new Map<number, Sprite>()
         const enemyLayer = new Container()
         const enemySprites = new Map<number, Sprite>()
+        const healthBarLayer = new Container()
+        const enemyHealthBars = new Map<number, Graphics>()
         const playerShip = new Sprite(playerTexture)
+        const playerHealthBar = new Graphics()
         playerShip.anchor.set(0.5)
         playerShip.scale.set(0.9)
         world.addChild(
@@ -160,7 +189,9 @@ export function GameCanvas() {
           projectileLayer,
           enemyLayer,
           playerShip,
+          healthBarLayer,
         )
+        healthBarLayer.addChild(playerHealthBar)
         application.stage.addChild(world)
 
         let gameState = createInitialGameState(GAME_CONFIG)
@@ -183,6 +214,13 @@ export function GameCanvas() {
           playerShip.position.set(gameState.player.x, gameState.player.y)
           playerShip.rotation =
             gameState.player.rotation + PLAYER_SPRITE_ROTATION_OFFSET
+          drawHealthBar(
+            playerHealthBar,
+            gameState.player.x,
+            gameState.player.y,
+            gameState.player.health,
+            GAME_CONFIG.player.maxHealth,
+          )
 
           const activeEnemyIds = new Set(
             gameState.enemies.map((enemy) => enemy.id),
@@ -193,6 +231,13 @@ export function GameCanvas() {
               enemyLayer.removeChild(sprite)
               sprite.destroy()
               enemySprites.delete(id)
+
+              const healthBar = enemyHealthBars.get(id)
+              if (healthBar) {
+                healthBarLayer.removeChild(healthBar)
+                healthBar.destroy()
+                enemyHealthBars.delete(id)
+              }
             }
           }
 
@@ -205,11 +250,26 @@ export function GameCanvas() {
               sprite.scale.set(0.85)
               enemyLayer.addChild(sprite)
               enemySprites.set(enemy.id, sprite)
+
+              const healthBar = new Graphics()
+              healthBarLayer.addChild(healthBar)
+              enemyHealthBars.set(enemy.id, healthBar)
             }
 
             sprite.position.set(enemy.x, enemy.y)
             sprite.rotation =
               enemy.rotation + PLAYER_SPRITE_ROTATION_OFFSET
+
+            const healthBar = enemyHealthBars.get(enemy.id)
+            if (healthBar) {
+              drawHealthBar(
+                healthBar,
+                enemy.x,
+                enemy.y,
+                enemy.health,
+                GAME_CONFIG.chaser.maxHealth,
+              )
+            }
           }
 
           const activeProjectileIds = new Set(

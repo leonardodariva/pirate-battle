@@ -93,9 +93,20 @@ desired heading with `atan2`, normalize the shortest angular difference, limit
 turning by configured radians per second, and then move forward using the fixed
 timestep. PixiJS mirrors enemies by stable id and does not implement AI rules.
 
-This increment intentionally stops before enemy/player collision, damage,
-scoring, island avoidance, and periodic spawning. Those rules will build on the
-same enemy state in following milestones.
+Projectile damage, player death, island avoidance, and periodic spawning will
+build on the same enemy state in following milestones.
+
+## Chaser contact damage
+
+`CombatSystem` checks the Chaser circle against the three circles approximating
+the player's hull. On contact it applies configured damage and removes the
+Chaser in the same simulation update, guaranteeing that contact damage happens
+once. The score is preserved because a Chaser that dies by collision awards no
+point.
+
+PixiJS draws health bars above the player and enemies from simulation health.
+The bars never decide damage or entity removal. Player death, projectile damage,
+and match completion remain later milestones.
 
 ## Asset strategy
 

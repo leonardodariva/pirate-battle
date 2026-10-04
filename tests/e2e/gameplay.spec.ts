@@ -92,6 +92,20 @@ test('moves the chaser toward the player', async ({ page }) => {
   expect(chasedState.enemies[0]?.rotation).not.toBe(0)
 })
 
+test('applies chaser collision damage once without awarding score', async ({
+  page,
+}) => {
+  await startGame(page)
+
+  await page.waitForFunction(
+    () => (window.__GAME_TEST__?.getState().enemies.length ?? 1) === 0,
+  )
+
+  const collisionState = await readGameState(page)
+  expect(collisionState.player.health).toBe(75)
+  expect(collisionState.score).toBe(0)
+})
+
 test('fires the front cannon through real keyboard input', async ({ page }) => {
   await startGame(page)
   const initialState = await readGameState(page)

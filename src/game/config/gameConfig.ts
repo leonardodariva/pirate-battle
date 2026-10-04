@@ -8,6 +8,7 @@ export interface GameConfig {
     maxFrameDeltaSeconds: number
   }
   player: {
+    maxHealth: number
     movementSpeed: number
     rotationSpeed: number
     boundaryRadius: number
@@ -34,6 +35,7 @@ export interface GameConfig {
   }
   chaser: {
     maxHealth: number
+    collisionDamage: number
     movementSpeed: number
     rotationSpeed: number
     collisionRadius: number
@@ -63,6 +65,7 @@ export const GAME_CONFIG: GameConfig = {
     maxFrameDeltaSeconds: 0.1,
   },
   player: {
+    maxHealth: 100,
     movementSpeed: 220,
     rotationSpeed: Math.PI,
     boundaryRadius: 52,
@@ -89,6 +92,7 @@ export const GAME_CONFIG: GameConfig = {
   },
   chaser: {
     maxHealth: 3,
+    collisionDamage: 25,
     movementSpeed: 90,
     rotationSpeed: 2.2,
     collisionRadius: 25,

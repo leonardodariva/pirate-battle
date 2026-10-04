@@ -1,8 +1,10 @@
 import type { GameConfig } from '../config/gameConfig'
 import {
   circleIntersectsRectangle,
+  getRotatedCircleCenters,
   insetRectangle,
 } from '../utils/collision'
+import { resolveChaserPlayerCollisions } from '../systems/CombatSystem'
 import {
   createInitialEnemies,
   updateEnemies,
@@ -22,6 +24,7 @@ export interface PlayerState {
   x: number
   y: number
   rotation: number
+  health: number
 }
 
 export interface ProjectileState {
@@ -43,6 +46,7 @@ export interface GameState {
   leftBroadsideCooldownRemaining: number
   rightBroadsideCooldownRemaining: number
   nextProjectileId: number
+  score: number
 }
 
 export function createInitialGameState(config: GameConfig): GameState {
@@ -51,6 +55,7 @@ export function createInitialGameState(config: GameConfig): GameState {
       x: config.arena.width / 2,
       y: config.arena.height / 2,
       rotation: 0,
+      health: config.player.maxHealth,
     },
     enemies: createInitialEnemies(config),
     projectiles: [],
@@ -58,6 +63,7 @@ export function createInitialGameState(config: GameConfig): GameState {
     leftBroadsideCooldownRemaining: 0,
     rightBroadsideCooldownRemaining: 0,
     nextProjectileId: 1,
+    score: 0,
   }
 }
 
@@ -113,8 +119,25 @@ export function updateGameState(
   )
     ? state.player.y
     : candidateY
-  const player = { x: playerX, y: playerY, rotation }
-  const enemies = updateEnemies(state.enemies, player, deltaSeconds, config)
+  const movedPlayer = {
+    x: playerX,
+    y: playerY,
+    rotation,
+    health: state.player.health,
+  }
+  const movedEnemies = updateEnemies(
+    state.enemies,
+    movedPlayer,
+    deltaSeconds,
+    config,
+  )
+  const combatResult = resolveChaserPlayerCollisions(
+    movedPlayer,
+    movedEnemies,
+    state.score,
+    config,
+  )
+  const { player, enemies, score } = combatResult
   let frontCannonCooldownRemaining = Math.max(
     0,
     state.frontCannonCooldownRemaining - deltaSeconds,
@@ -205,6 +228,7 @@ export function updateGameState(
     leftBroadsideCooldownRemaining,
     rightBroadsideCooldownRemaining,
     nextProjectileId,
+    score,
   }
 }
 
@@ -272,13 +296,15 @@ function playerCollidesWithIsland(
   rotation: number,
   config: GameConfig,
 ) {
-  const forwardX = Math.sin(rotation)
-  const forwardY = -Math.cos(rotation)
-
-  return config.player.collisionOffsets.some((offset) =>
+  return getRotatedCircleCenters(
+    x,
+    y,
+    rotation,
+    config.player.collisionOffsets,
+  ).some((circle) =>
     collidesWithIsland(
-      x + forwardX * offset,
-      y + forwardY * offset,
+      circle.x,
+      circle.y,
       config.player.collisionRadius,
       config,
     ),

@@ -5,6 +5,41 @@ export interface RectangleBounds {
   height: number
 }
 
+export interface CircleCenter {
+  x: number
+  y: number
+}
+
+export function circlesIntersect(
+  firstX: number,
+  firstY: number,
+  firstRadius: number,
+  secondX: number,
+  secondY: number,
+  secondRadius: number,
+) {
+  const distanceX = firstX - secondX
+  const distanceY = firstY - secondY
+  const combinedRadius = firstRadius + secondRadius
+
+  return distanceX ** 2 + distanceY ** 2 <= combinedRadius ** 2
+}
+
+export function getRotatedCircleCenters(
+  x: number,
+  y: number,
+  rotation: number,
+  offsets: readonly number[],
+): CircleCenter[] {
+  const forwardX = Math.sin(rotation)
+  const forwardY = -Math.cos(rotation)
+
+  return offsets.map((offset) => ({
+    x: x + forwardX * offset,
+    y: y + forwardY * offset,
+  }))
+}
+
 export function circleIntersectsRectangle(
   circleX: number,
   circleY: number,

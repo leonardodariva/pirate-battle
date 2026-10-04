@@ -5,6 +5,7 @@ export interface GameTestSnapshot {
     x: number
     y: number
     rotation: number
+    health: number
   }
   enemies: Array<{
     id: number
@@ -24,6 +25,7 @@ export interface GameTestSnapshot {
   frontCannonCooldownRemaining: number
   leftBroadsideCooldownRemaining: number
   rightBroadsideCooldownRemaining: number
+  score: number
 }
 
 interface GameTestBridge {
@@ -61,6 +63,7 @@ export function installGameTestBridge(readState: () => GameState) {
           state.leftBroadsideCooldownRemaining,
         rightBroadsideCooldownRemaining:
           state.rightBroadsideCooldownRemaining,
+        score: state.score,
       }
     },
   }
