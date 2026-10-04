@@ -32,7 +32,9 @@ letterboxed instead of stretching or cropping the arena.
 ## Input
 
 `KeyboardInput` stores currently pressed gameplay keys and exposes a small input
-snapshot (`forward`, `turnLeft`, and `turnRight`). It does not mutate game state.
+snapshot (`forward`, `turnLeft`, and `turnRight`). It also queues the edge of a
+`Space` press until one simulation step consumes it. This prevents a held key
+from becoming a new shot on every fixed update. Input does not mutate game state.
 This makes simultaneous input possible and lets future touch controls produce
 the same snapshot without changing movement logic. Key state is cleared on
 window blur and all listeners are removed when gameplay unmounts.
@@ -42,6 +44,17 @@ window blur and all listeners are removed when gameplay unmounts.
 The player is clamped to the arena using a configured circular boundary radius.
 This is intentionally conservative and predictable. Island collision and more
 specific collision shapes belong to a later milestone.
+
+## Front cannon and projectiles
+
+The simulation owns projectile position, direction, speed, damage, remaining
+lifetime, and owner. A front-cannon request only creates a projectile when its
+configured cooldown is ready. Projectiles move during fixed simulation updates
+and are removed when their lifetime expires or they leave the logical arena.
+
+PixiJS keeps a sprite map keyed by projectile id. Rendering creates and removes
+sprites to mirror the simulation, but it does not decide when a shot is allowed
+or how it moves. The projectile uses the official `cannon_ball.png` asset.
 
 ## Asset strategy
 

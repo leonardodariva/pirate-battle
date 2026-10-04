@@ -28,6 +28,7 @@ function App() {
         <div className="game-instructions" aria-label="Game controls">
           <span><kbd>W</kbd> / <kbd>↑</kbd> Move forward</span>
           <span><kbd>A</kbd> <kbd>D</kbd> / <kbd>←</kbd> <kbd>→</kbd> Rotate</span>
+          <span><kbd>Space</kbd> Front cannon</span>
         </div>
       </main>
     )

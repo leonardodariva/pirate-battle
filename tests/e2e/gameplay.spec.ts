@@ -56,6 +56,21 @@ test('moves and rotates through real keyboard input', async ({ page }) => {
   expect(rotatedState.player.rotation).toBeGreaterThan(0.2)
 })
 
+test('fires the front cannon through real keyboard input', async ({ page }) => {
+  await startGame(page)
+  const initialState = await readGameState(page)
+
+  await page.keyboard.press('Space')
+  await page.waitForFunction(
+    () => (window.__GAME_TEST__?.getState().projectiles.length ?? 0) === 1,
+  )
+
+  const firedState = await readGameState(page)
+  expect(firedState.projectiles).toHaveLength(1)
+  expect(firedState.projectiles[0]?.owner).toBe('player')
+  expect(firedState.projectiles[0]?.y).toBeLessThan(initialState.player.y)
+})
+
 test('keeps the player inside the arena and preserves state on resize', async ({
   page,
 }) => {

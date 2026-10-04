@@ -12,6 +12,13 @@ export interface GameConfig {
     rotationSpeed: number
     boundaryRadius: number
   }
+  frontCannon: {
+    cooldownSeconds: number
+    projectileSpeed: number
+    projectileDamage: number
+    projectileLifetimeSeconds: number
+    spawnOffset: number
+  }
 }
 
 export const GAME_CONFIG: GameConfig = {
@@ -27,5 +34,12 @@ export const GAME_CONFIG: GameConfig = {
     movementSpeed: 220,
     rotationSpeed: Math.PI,
     boundaryRadius: 52,
+  },
+  frontCannon: {
+    cooldownSeconds: 0.6,
+    projectileSpeed: 520,
+    projectileDamage: 1,
+    projectileLifetimeSeconds: 1.5,
+    spawnOffset: 58,
   },
 }

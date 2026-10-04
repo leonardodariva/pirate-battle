@@ -9,6 +9,7 @@ import {
   TilingSprite,
 } from 'pixi.js'
 import playerShipUrl from '../../../assets/png/default/ships/ship_5.png'
+import cannonBallUrl from '../../../assets/png/default/ship_parts/cannon_ball.png'
 import waterTextureUrl from '../../../assets/png/default/tiles/tile_73.png'
 import { GAME_CONFIG } from '../config/gameConfig'
 import { GameLoop } from '../core/GameLoop'
@@ -20,6 +21,8 @@ type LoadState =
   | { status: 'loading'; progress: number }
   | { status: 'ready' }
   | { status: 'error' }
+
+const PLAYER_SPRITE_ROTATION_OFFSET = Math.PI
 
 export function GameCanvas() {
   const hostRef = useRef<HTMLDivElement>(null)
@@ -62,14 +65,17 @@ export function GameCanvas() {
         })
         applicationInitialized = true
 
+        const assetUrls = [waterTextureUrl, playerShipUrl, cannonBallUrl]
         const loadedTextures: Texture[] = []
-        for (const assetUrl of [waterTextureUrl, playerShipUrl]) {
+        for (const assetUrl of assetUrls) {
           loadedTextures.push(await Assets.load<Texture>(assetUrl))
 
           if (!disposed) {
             setLoadState({
               status: 'loading',
-              progress: loadedTextures.length * 50,
+              progress: Math.round(
+                (loadedTextures.length / assetUrls.length) * 100,
+              ),
             })
           }
         }
@@ -79,8 +85,8 @@ export function GameCanvas() {
           return
         }
 
-        const [waterTexture, playerTexture] = loadedTextures
-        if (!waterTexture || !playerTexture) {
+        const [waterTexture, playerTexture, cannonBallTexture] = loadedTextures
+        if (!waterTexture || !playerTexture || !cannonBallTexture) {
           throw new Error('The required game textures were not loaded.')
         }
 
@@ -93,10 +99,12 @@ export function GameCanvas() {
           width: GAME_CONFIG.arena.width,
           height: GAME_CONFIG.arena.height,
         })
+        const projectileLayer = new Container()
+        const projectileSprites = new Map<number, Sprite>()
         const playerShip = new Sprite(playerTexture)
         playerShip.anchor.set(0.5)
         playerShip.scale.set(0.9)
-        world.addChild(water, playerShip)
+        world.addChild(water, projectileLayer, playerShip)
         application.stage.addChild(world)
 
         let gameState = createInitialGameState(GAME_CONFIG)
@@ -117,7 +125,34 @@ export function GameCanvas() {
 
         const renderScene = () => {
           playerShip.position.set(gameState.player.x, gameState.player.y)
-          playerShip.rotation = gameState.player.rotation
+          playerShip.rotation =
+            gameState.player.rotation + PLAYER_SPRITE_ROTATION_OFFSET
+
+          const activeProjectileIds = new Set(
+            gameState.projectiles.map((projectile) => projectile.id),
+          )
+
+          for (const [id, sprite] of projectileSprites) {
+            if (!activeProjectileIds.has(id)) {
+              projectileLayer.removeChild(sprite)
+              sprite.destroy()
+              projectileSprites.delete(id)
+            }
+          }
+
+          for (const projectile of gameState.projectiles) {
+            let sprite = projectileSprites.get(projectile.id)
+
+            if (!sprite) {
+              sprite = new Sprite(cannonBallTexture)
+              sprite.anchor.set(0.5)
+              sprite.scale.set(1.4)
+              projectileLayer.addChild(sprite)
+              projectileSprites.set(projectile.id, sprite)
+            }
+
+            sprite.position.set(projectile.x, projectile.y)
+          }
         }
 
         const handleTick = (ticker: Ticker) => {

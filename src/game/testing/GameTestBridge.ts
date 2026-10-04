@@ -6,6 +6,14 @@ export interface GameTestSnapshot {
     y: number
     rotation: number
   }
+  projectiles: Array<{
+    id: number
+    x: number
+    y: number
+    direction: number
+    owner: 'player' | 'enemy'
+  }>
+  frontCannonCooldownRemaining: number
 }
 
 interface GameTestBridge {
@@ -29,6 +37,15 @@ export function installGameTestBridge(readState: () => GameState) {
 
       return {
         player: { ...state.player },
+        projectiles: state.projectiles.map((projectile) => ({
+          id: projectile.id,
+          x: projectile.x,
+          y: projectile.y,
+          direction: projectile.direction,
+          owner: projectile.owner,
+        })),
+        frontCannonCooldownRemaining:
+          state.frontCannonCooldownRemaining,
       }
     },
   }
