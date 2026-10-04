@@ -1,4 +1,8 @@
 import type { GameConfig } from '../config/gameConfig'
+import {
+  circleIntersectsRectangle,
+  insetRectangle,
+} from '../utils/collision'
 
 export interface EnemyState {
   id: number
@@ -57,21 +61,44 @@ function updateChaser(
       clamp(rotationDifference, -maximumTurn, maximumTurn),
   )
   const distance = config.chaser.movementSpeed * deltaSeconds
+  const candidateX = clamp(
+    enemy.x + Math.sin(rotation) * distance,
+    config.chaser.collisionRadius,
+    config.arena.width - config.chaser.collisionRadius,
+  )
+  const candidateY = clamp(
+    enemy.y - Math.cos(rotation) * distance,
+    config.chaser.collisionRadius,
+    config.arena.height - config.chaser.collisionRadius,
+  )
+  const x = enemyCollidesWithIsland(candidateX, enemy.y, config)
+    ? enemy.x
+    : candidateX
+  const y = enemyCollidesWithIsland(x, candidateY, config)
+    ? enemy.y
+    : candidateY
 
   return {
     ...enemy,
-    x: clamp(
-      enemy.x + Math.sin(rotation) * distance,
-      config.chaser.collisionRadius,
-      config.arena.width - config.chaser.collisionRadius,
-    ),
-    y: clamp(
-      enemy.y - Math.cos(rotation) * distance,
-      config.chaser.collisionRadius,
-      config.arena.height - config.chaser.collisionRadius,
-    ),
+    x,
+    y,
     rotation,
   }
+}
+
+function enemyCollidesWithIsland(
+  x: number,
+  y: number,
+  config: GameConfig,
+) {
+  return config.islands.some((island) =>
+    circleIntersectsRectangle(
+      x,
+      y,
+      config.chaser.collisionRadius,
+      insetRectangle(island, island.collisionInset),
+    ),
+  )
 }
 
 function clamp(value: number, minimum: number, maximum: number) {

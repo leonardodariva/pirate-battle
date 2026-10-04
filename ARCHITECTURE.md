@@ -93,8 +93,14 @@ desired heading with `atan2`, normalize the shortest angular difference, limit
 turning by configured radians per second, and then move forward using the fixed
 timestep. PixiJS mirrors enemies by stable id and does not implement AI rules.
 
-Projectile damage, player death, island avoidance, and periodic spawning will
-build on the same enemy state in following milestones.
+The Chaser uses its configured collision circle against each island's inset
+rectangle. Horizontal and vertical movement are resolved separately, matching
+the player's predictable sliding behavior and preventing enemies from crossing
+land. This is local collision avoidance rather than pathfinding: a Chaser can
+still become stuck when the direct route to the player is completely blocked.
+
+Player death and periodic spawning will build on the same enemy state in
+following milestones.
 
 ## Chaser contact damage
 

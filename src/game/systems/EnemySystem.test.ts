@@ -88,4 +88,31 @@ describe('EnemySystem', () => {
 
     expect(updatedEnemy?.rotation).toBeCloseTo(Math.PI / 2)
   })
+
+  it('does not move through an island', () => {
+    const island = GAME_CONFIG.islands[0]
+    if (!island) {
+      throw new Error('The test requires one configured island.')
+    }
+    const collisionLeft =
+      island.x + island.collisionInset - GAME_CONFIG.chaser.collisionRadius
+    const enemy: EnemyState = {
+      id: 1,
+      type: 'chaser',
+      x: collisionLeft - 1,
+      y: island.y + island.height / 2,
+      rotation: Math.PI / 2,
+      health: GAME_CONFIG.chaser.maxHealth,
+    }
+
+    const [updatedEnemy] = updateEnemies(
+      [enemy],
+      { x: island.x + island.width + 100, y: enemy.y },
+      0.1,
+      GAME_CONFIG,
+    )
+
+    expect(updatedEnemy?.x).toBe(enemy.x)
+    expect(updatedEnemy?.y).toBe(enemy.y)
+  })
 })
