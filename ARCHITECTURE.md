@@ -88,6 +88,10 @@ the match configuration snapshot. A TanStack Query mutation sends the record
 through the central Axios client to `POST /api/matches` and invalidates both
 Ranking and Match History after confirmation.
 
+The same immutable record is saved separately as the last completed result.
+It is restored on startup and summarized on the main menu, while abandoned
+matches never enter this storage path.
+
 The mock store persists confirmed records in local storage. Registration checks
 `matchId` before inserting: the first request returns `201` and a retry returns
 the original record with `200`, leaving only one stored match. This is the
@@ -110,9 +114,9 @@ pending copy is removed without creating a duplicate.
 MSW starts before React mounts and uses the generated worker from `public/`, so
 the same REST boundary is present in development, Playwright, preview, and the
 eventual static deployment. A small HTML bootstrap status remains visible while
-the worker initializes. This milestone implements the normal ranking and history scenarios;
-scenario selection, persisted mock records, failures, and variable latency are
-intentionally deferred.
+the worker initializes. The selectable scenarios cover normal operation, a
+registration connection failure, and timeout after commit. Additional query
+failure and variable-latency scenarios remain documented limitations.
 
 ## Pause lifecycle
 
@@ -330,9 +334,10 @@ execute the other runner's files.
 ## End-to-end testing
 
 Playwright starts Vite in `test` mode and drives a real Chromium browser. The
-initial suite covers match start, asset completion, a single PixiJS canvas,
-keyboard movement and rotation, arena boundaries, resize stability, and clean
-scene recreation.
+suite covers gameplay, lifecycle, desktop and touch input, results, options,
+ranking, history, registration failure recovery, and idempotency. Versioned
+image baselines protect the menu, a stable arena state, and the result dialog
+against unintended visual changes.
 
 Test mode installs a `window.__GAME_TEST__` bridge. Playwright uses real keyboard
 events and production rules; the bridge returns state copies and can place a

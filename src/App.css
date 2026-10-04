@@ -84,6 +84,17 @@ h1 {
   text-shadow: 0 2px 2px rgba(0, 0, 0, 0.75);
 }
 
+.last-result {
+  margin: 0;
+  color: rgba(226, 242, 247, 0.8);
+  font-size: clamp(0.68rem, 1.2vw, 0.82rem);
+  text-align: center;
+}
+
+.last-result strong {
+  color: #ffe3a5;
+}
+
 .menu-options-button {
   width: 100%;
   background: rgba(3, 25, 35, 0.72);
@@ -808,7 +819,8 @@ kbd {
     padding: 1.4rem 1.6rem;
   }
 
-  .menu-card:has(.pending-registration) {
+  .menu-card:has(.pending-registration),
+  .menu-card:has(.last-result) {
     width: min(92vw, 72svh, 24rem);
     padding: 1.15rem 1.5rem;
   }
@@ -914,6 +926,11 @@ kbd {
   .menu-copy {
     margin-top: 0.35rem;
     font-size: 0.58rem;
+  }
+
+  .last-result {
+    margin-top: 0.15rem;
+    font-size: 0.52rem;
   }
 
   .pending-registration {

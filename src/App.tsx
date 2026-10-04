@@ -23,6 +23,11 @@ import {
 } from './storage/gameOptionsStorage'
 import { getOrCreatePlayerIdentity } from './storage/playerIdentityStorage'
 import { PENDING_MATCHES_STORAGE_KEY } from './storage/pendingMatchStorage'
+import {
+  clearLastCompletedMatch,
+  loadLastCompletedMatch,
+  saveLastCompletedMatch,
+} from './storage/lastCompletedMatchStorage'
 import { CONFIRMED_MATCHES_STORAGE_KEY } from './mocks/mockMatchStore'
 import {
   readNetworkScenario,
@@ -52,6 +57,9 @@ function App() {
   const [pauseRequestId, setPauseRequestId] = useState(0)
   const [gameUiState, setGameUiState] = useState<GameUiState | null>(null)
   const [completedMatch, setCompletedMatch] = useState<MatchRecord | null>(null)
+  const [lastCompletedMatch, setLastCompletedMatch] = useState(
+    loadLastCompletedMatch,
+  )
   const registration = useMatchRegistration({ match: completedMatch })
 
   const startMatch = () => {
@@ -84,6 +92,7 @@ function App() {
   const handleResetMockData = () => {
     window.localStorage.removeItem(CONFIRMED_MATCHES_STORAGE_KEY)
     window.localStorage.removeItem(PENDING_MATCHES_STORAGE_KEY)
+    clearLastCompletedMatch()
     saveNetworkScenario('normal')
     window.location.reload()
   }
@@ -95,30 +104,30 @@ function App() {
       return
     }
 
+    if (completedMatch?.matchId === matchId) {
+      return
+    }
+
     const endReason = nextState.endReason
+    const configuration = {
+      sessionDurationSeconds: matchConfig.match.sessionDurationSeconds,
+      enemySpawnIntervalSeconds: matchConfig.spawn.intervalSeconds,
+    }
+    const match = {
+      matchId,
+      playerId: player.playerId,
+      playerName: player.playerName,
+      score: nextState.score,
+      durationSeconds: Math.round(nextState.elapsedTimeSeconds),
+      endReason,
+      completedAt: new Date().toISOString(),
+      configKey: createConfigKey(configuration),
+      configuration,
+    }
 
-    setCompletedMatch((currentMatch) => {
-      if (currentMatch?.matchId === matchId) {
-        return currentMatch
-      }
-
-      const configuration = {
-        sessionDurationSeconds: matchConfig.match.sessionDurationSeconds,
-        enemySpawnIntervalSeconds: matchConfig.spawn.intervalSeconds,
-      }
-
-      return {
-        matchId,
-        playerId: player.playerId,
-        playerName: player.playerName,
-        score: nextState.score,
-        durationSeconds: Math.round(nextState.elapsedTimeSeconds),
-        endReason,
-        completedAt: new Date().toISOString(),
-        configKey: createConfigKey(configuration),
-        configuration,
-      }
-    })
+    saveLastCompletedMatch(match)
+    setLastCompletedMatch(match)
+    setCompletedMatch(match)
   }
 
   if (screen === 'game') {
@@ -331,6 +340,17 @@ function App() {
               {registration.mutation.isPending ? 'Retrying...' : 'Retry'}
             </button>
           </aside>
+        )}
+        {lastCompletedMatch && (
+          <p className="last-result" aria-label="Last completed match">
+            Last battle: <strong>{lastCompletedMatch.score} points</strong>
+            {' · '}
+            {lastCompletedMatch.durationSeconds}s
+            {' · '}
+            {lastCompletedMatch.endReason === 'timeout'
+              ? 'Time up'
+              : 'Ship destroyed'}
+          </p>
         )}
         <p className="menu-copy">Navigate. Explore. Survive.</p>
       </section>

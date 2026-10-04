@@ -4,6 +4,7 @@ import { GAME_OPTIONS_STORAGE_KEY } from '../../src/storage/gameOptionsStorage'
 import { CONFIRMED_MATCHES_STORAGE_KEY } from '../../src/mocks/mockMatchStore'
 import { NETWORK_SCENARIO_STORAGE_KEY } from '../../src/mocks/networkScenario'
 import { PENDING_MATCHES_STORAGE_KEY } from '../../src/storage/pendingMatchStorage'
+import { LAST_COMPLETED_MATCH_STORAGE_KEY } from '../../src/storage/lastCompletedMatchStorage'
 
 async function startGame(page: Page) {
   await page.goto('/')
@@ -115,6 +116,31 @@ test('registers a completed match and includes it in history', async ({
   const newestMatch = page.getByRole('row').nth(1)
   await expect(newestMatch).toContainText('0')
   await expect(newestMatch).toContainText('Time up')
+})
+
+test('persists the last completed result after refresh', async ({ page }) => {
+  await startGame(page)
+  await page.evaluate(() => window.__GAME_TEST__?.setRemainingTime(0.05))
+  await expect(
+    page.getByRole('heading', { name: 'Time is up!' }),
+  ).toBeVisible()
+
+  const storedMatch = await page.evaluate(
+    ({ storageKey }) =>
+      JSON.parse(window.localStorage.getItem(storageKey) ?? 'null'),
+    { storageKey: LAST_COMPLETED_MATCH_STORAGE_KEY },
+  )
+  expect(storedMatch).toMatchObject({
+    score: 0,
+    endReason: 'timeout',
+    durationSeconds: 120,
+  })
+
+  await page.getByRole('button', { name: 'Main menu' }).click()
+  await page.reload()
+  await expect(page.getByLabel('Last completed match')).toContainText(
+    'Last battle: 0 points · 120s · Time up',
+  )
 })
 
 test('returns an existing record when the same matchId is submitted twice', async ({

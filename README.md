@@ -72,8 +72,8 @@ is selected:
 
 Changing Options never changes a match already in progress. The first spawned
 enemy is a Chaser and the second is a Shooter; later spawns use deterministic
-weighted selection. The configured active-enemy limit protects gameplay and
-rendering from unbounded growth.
+weighted selection. A spawn is skipped when no configured position is safely
+available.
 
 ## Match registration
 
@@ -81,6 +81,9 @@ Every match receives one `crypto.randomUUID()` identifier. A completed match is
 sent to `POST /api/matches`. The mock backend stores it locally and treats
 `matchId` as an idempotency key: retries return the original record instead of
 creating a duplicate.
+
+The most recent completed result is also persisted locally and summarized on
+the main menu after refresh.
 
 Failed submissions are saved in a separate pending queue. They survive refresh,
 do not block Play, and can be retried from the result screen or main menu.
@@ -104,8 +107,9 @@ For the timeout-after-commit demonstration:
 4. Retry the pending result.
 5. The original server record is returned and no duplicate is created.
 
-**Reset mock data** removes confirmed mock matches, pending submissions, and the
-selected network scenario. Gameplay options and player identity are preserved.
+**Reset mock data** removes confirmed mock matches, pending submissions, the
+last completed result, and the selected network scenario. Gameplay options and
+player identity are preserved.
 
 ## Testing strategy
 
@@ -118,6 +122,8 @@ bridge observes state and controls deterministic setup, but does not fake combat
 or collision outcomes. Critical coverage includes lifecycle cleanup, weapons,
 islands, Chaser/Shooter behavior, pause, results, mobile multi-touch, Ranking,
 History, pending retries, and timeout-after-commit idempotency.
+Versioned Playwright baselines cover the main menu, a frozen arena state, and
+the completed-match result.
 
 ## Architecture
 
